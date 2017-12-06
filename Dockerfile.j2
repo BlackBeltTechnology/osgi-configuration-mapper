@@ -1,18 +1,5 @@
-FROM docker.blackbelt.cloud/judo:${judo.version}
+FROM ubuntu:16.04
 MAINTAINER pdu-devops@blackbelt.hu
 
-COPY target/*.jar ${JUDO_HOME}/deploy
+COPY target/*.jar /
 
-ENV GOSS_VER v0.3.5
-ENV PATH=/goss:$PATH
-ENV GOSS_CONFIG_DIR=/goss-config
-ENV GOSS_CONFIG_FILE=goss.yml
-ENV GOSS_CONFIG=$GOSS_CONFIG_DIR/$GOSS_CONFIG_FILE
-
-RUN mkdir /goss && \
-    mkdir $GOSS_CONFIG_DIR && \
-    curl -fsSL https://goss.rocks/install | GOSS_DST=/goss sh
-
-COPY goss_default.yml $GOSS_CONFIG
-
-ENTRYPOINT ["bash", "-c", "goss -g $GOSS_CONFIG validate -r 1m -f tap && exec /opt/judo/bin/karaf run"]

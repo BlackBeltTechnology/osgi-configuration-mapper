@@ -12,4 +12,3 @@ docker-images:
     image-prefix: *DREPO
     package: target/*.jar
     dockerfile-template: Dockerfile.j2
-    context-location: docker
