@@ -3,14 +3,14 @@ package hu.blackbelt.configuration.mapper;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
-@ObjectClassDefinition(name="Solr container manager")
+@ObjectClassDefinition(name="Templated configuration set manager")
 @interface DefaultTemplatedConfigSetConfig {
 
     @AttributeDefinition(
             name = "Template path",
             description = "The template pathes monitored inside bundles"
     )
-    String templatePath();
+    String templatePath() default "/config-templates";
 
     @AttributeDefinition(
             name = "Environment prefix",
