@@ -28,7 +28,6 @@ hs_err_pid*
 /**/.checkstyle
 /**/.idea/
 /**/*.iml
-/**/lombok.config
 # original location
 !**/config/lombok.config
 /**/*.pyc
