@@ -5,10 +5,4 @@ backend-builder-version: 1.0-7_RELEASE
 maven:
   distribution-url: https://nexus.blackbelt.cloud/repository/maven-judo-release
 
-docker-zalog: &DREPO docker.blackbelt.cloud/osgi-configuration-mapper
-
-docker-images:
-  osgi-configuration-mapper:
-    image-prefix: *DREPO
-    package: target/*.jar
-    dockerfile-template: Dockerfile.j2
+docker-images: {}
