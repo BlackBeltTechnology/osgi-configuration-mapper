@@ -1,0 +1,7 @@
+# Test Properties
+value1=${contextVar1 ! "contextVar1TemplateDefault"}
+value2=${contextVar2 ! "contextVar2TemplateDefault"}
+value3=${contextVar3 ! "contextVar2TemplateDefault"}
+
+# File directory. By default: <KARAF_HOME>/test
+workDir=${testDir ! ((KARAF_HOME ! (USER_HOME ! (HOME ! ((HomeDrive + HomePath) ! PWD)))) + "/test")}

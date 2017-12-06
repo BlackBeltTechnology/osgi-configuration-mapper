@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: test-configurations
+Bundle-SymbolicName: hu.blackbelt.osgi-configuration-mapper.test
+Bundle-Version: 1.0.0.SNAPSHOT

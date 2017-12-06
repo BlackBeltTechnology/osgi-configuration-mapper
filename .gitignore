@@ -20,3 +20,36 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+
+/**/target/
+/**/.settings/
+/**/.classpath
+/**/.checkstyle
+/**/.idea/
+/**/*.iml
+/**/lombok.config
+# original location
+!**/config/lombok.config
+/**/*.pyc
+/**/*~
+/**/gen/
+# model
+**/.runtime
+**/data/localmodel
+**/data/.config
+**/stamp.dat
+**/.index
+**/maven-metadata-local.xml
+**/format_version.dat
+.mvn/timing.properties
+/**/*-web/etc
+/**/*-web/frontend
+/**/*-web/lib
+/**/*-web/node
+/**/.credentials
+/**/.work/
+/**/*.versionsBackup
+/**/*.json-angular
+/**/*$py.class
+.output
