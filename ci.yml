@@ -5,3 +5,5 @@ backend-builder-version: 1.0-7_RELEASE
 maven:
   distribution-url: https://nexus.blackbelt.cloud/repository/maven-judo-release
 
+docker-images: []
+
