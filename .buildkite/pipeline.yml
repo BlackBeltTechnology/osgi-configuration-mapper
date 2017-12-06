@@ -8,7 +8,6 @@ steps:
       mvn clean deploy -DaltDeploymentRepository=blackbelt-nexus-distribution::default::$NEXUS3_URL/repository/maven-judo-release
       git tag -a $PROJECT_VERSION -m '$PROJECT_VERSION' && git push origin $PROJECT_VERSION
     agents:
-      target: assembler
-
+      target: builder-default
 
 
