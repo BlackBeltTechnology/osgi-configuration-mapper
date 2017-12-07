@@ -45,6 +45,7 @@ public class OsgiTemplatedConfigurationSetHandler {
     private static final String CONFIGURATION_PROPERTY_NAME = "__osgi_templated_config_name";
 
     public static final String UPDATING_CONFIGUTRATION = "Updating configuration pid: %s configEntry: %s state: %s entries: %s";
+    private final static String NEWLINE = System.getProperty("line.separator");
 
     private final ConfigurationAdmin configAdmin;
     private final String envPrefix;
@@ -204,7 +205,7 @@ public class OsgiTemplatedConfigurationSetHandler {
             if (k.toLowerCase().contains("password") || k.toLowerCase().contains("secret")) {
                 value = "**************";
             }
-            b.append("\n\t" +  k + " = " + value);
+            b.append(NEWLINE + "\t" +  k + " = " + value);
         }
         return b.toString();
     }

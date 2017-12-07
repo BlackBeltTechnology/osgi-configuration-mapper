@@ -1,6 +1,5 @@
 package hu.blackbelt.configuration.mapper;
 
-import com.google.common.base.Charsets;
 import lombok.SneakyThrows;
 
 import java.io.BufferedInputStream;
@@ -10,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.URL;
@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public final class Utils {
@@ -347,6 +348,8 @@ public final class Utils {
         Dictionary ht = new Hashtable();
 
         InputStream in = new BufferedInputStream(is);
+
+
         try {
             in.mark(1);
             boolean isXml = in.read() == '<';
@@ -354,7 +357,13 @@ public final class Utils {
             if (isXml) {
                 p.loadFromXML(in);
             } else {
-                p.load(new InputStreamReader(in, Charsets.UTF_8));
+                // Reader reader = new InputStreamReader(in, Charsets.UTF_8);
+                // Windows hack to replace backslashes to handle pathes well
+                Scanner s = new Scanner(in).useDelimiter("\\A");
+                String data = s.hasNext() ? s.next() : "";
+                data = data.replace("\\","\\\\");
+                Reader reader = new StringReader(data);
+                p.load(reader);
             }
             ((Hashtable) ht).putAll(p);
         } finally {

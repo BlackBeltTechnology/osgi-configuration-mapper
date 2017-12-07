@@ -33,6 +33,7 @@ public class TemplateProcessor {
     private final String keyPrefix;
     private final Map<String, Class> defaultTypes;
     private final Map<String, Object> defaultValues;
+    private final static String NEWLINE = System.getProperty("line.separator");
 
     Configuration templateConfiguration = new Configuration(Configuration.VERSION_2_3_22);
 
@@ -188,7 +189,7 @@ public class TemplateProcessor {
             if (k.toLowerCase().contains("password") || k.toLowerCase().contains("secret")) {
                 value = "**************";
             }
-            b.append("\n\t" +  k + " (" + configTypesByKey.get(k) + ") = " + value);
+            b.append(NEWLINE + "\t" +  k + " (" + configTypesByKey.get(k) + ") = " + value);
         }
         LOGGER.info(b.toString());
     }
