@@ -32,7 +32,7 @@ public class DefaultTemplatedConfigSet {
 
         osgiTemplatedConfigurationSetHandler = new OsgiTemplatedConfigurationSetHandler(
                 configurationAdmin,
-                config.templatePath(),
+                config.envPrefix(),
                 Utils.fromDictionary(componentContext.getProperties()),
                 ImmutableMap.of(),
                 ImmutableMap.of());
