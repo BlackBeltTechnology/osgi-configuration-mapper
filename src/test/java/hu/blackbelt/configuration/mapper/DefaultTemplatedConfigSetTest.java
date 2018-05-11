@@ -13,6 +13,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -29,14 +31,22 @@ import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 @Slf4j
 public class DefaultTemplatedConfigSetTest {
 
+    private static final String CONFIGSET_PID = "configset";
+    private static final String VALUE1_VALUE = "contextVar1TemplateDefault";
+    private static final String VALUE2_VALUE = "var2FromSystem";
+    private static final String VALUE3_VALUE = "var3FromOsgi";
+    private static final String KARAF_HOME = "/karaf";
+    private static final String TEST_CONFIG_FACTORY_PID = "test.config";
+    private static final String TEST_CONFIG_INSTANCE = "instancePid";
+
 
     @Inject
     private ConfigurationAdmin configAdmin;
 
     @Configuration
     public Option[] config() {
-        System.getProperties().put("KARAF_HOME", "/karaf");
-        System.getProperties().put("contextVar2", "var2FromSystem");
+        System.getProperties().put("KARAF_HOME", KARAF_HOME);
+        System.getProperties().put("contextVar2", VALUE2_VALUE);
 
         return options(
                 cleanCaches(),
@@ -51,12 +61,12 @@ public class DefaultTemplatedConfigSetTest {
 
                 bundle("reference:file:target/classes"),
 
-                newConfiguration("configset")
+                newConfiguration(CONFIGSET_PID)
                         .put("templatePath", "/config-templates")
                         .put("envPrefix", "PREFIX_")
                         .put("contextBool", "true")
-                        .put("contextFactoryPid", "instancePid")
-                        .put("contextVar3", "var3FromOsgi")
+                        .put("contextFactoryPid", TEST_CONFIG_INSTANCE)
+                        .put("contextVar3", VALUE3_VALUE)
 
                         .asOption(),
 
@@ -70,7 +80,29 @@ public class DefaultTemplatedConfigSetTest {
     public void testDefaultTemplatedConfigSet() throws IOException, InvalidSyntaxException {
         List<org.osgi.service.cm.Configuration> configurations = Arrays.asList(configAdmin.listConfigurations(null));
         assertThat(configurations.size(), equalTo(2));
+
+        final org.osgi.service.cm.Configuration configuration = configurations.stream()
+                .filter(cfg -> !CONFIGSET_PID.equals(cfg.getPid()))
+                .collect(singletonCollector());
+
+        assertThat(configuration.getProperties().get("value1"), equalTo(VALUE1_VALUE));
+        assertThat(configuration.getProperties().get("value2"), equalTo(VALUE2_VALUE));
+        assertThat(configuration.getProperties().get("value3"), equalTo(VALUE3_VALUE));
+        assertThat(configuration.getProperties().get("workDir"), equalTo(KARAF_HOME + "/test"));
+        assertThat(configuration.getProperties().get("service.factoryPid"), equalTo(TEST_CONFIG_FACTORY_PID));
+        assertThat(configuration.getProperties().get("__osgi_templated_config_name"), equalTo(TEST_CONFIG_FACTORY_PID + "-" + TEST_CONFIG_INSTANCE));
     }
 
 
+    public static <T> Collector<T, ?, T> singletonCollector() {
+        return Collectors.collectingAndThen(
+                Collectors.toList(),
+                list -> {
+                    if (list.size() != 1) {
+                        throw new IllegalStateException();
+                    }
+                    return list.get(0);
+                }
+        );
+    }
 }
