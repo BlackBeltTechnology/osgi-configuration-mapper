@@ -81,16 +81,16 @@ public class DefaultTemplatedConfigSetTest {
         List<org.osgi.service.cm.Configuration> configurations = Arrays.asList(configAdmin.listConfigurations(null));
         assertThat(configurations.size(), equalTo(2));
 
-        final org.osgi.service.cm.Configuration configuration = configurations.stream()
-                .filter(cfg -> !CONFIGSET_PID.equals(cfg.getPid()))
+        final org.osgi.service.cm.Configuration testConfig = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG_FACTORY_PID))
                 .collect(singletonCollector());
 
-        assertThat(configuration.getProperties().get("value1"), equalTo(VALUE1_VALUE));
-        assertThat(configuration.getProperties().get("value2"), equalTo(VALUE2_VALUE));
-        assertThat(configuration.getProperties().get("value3"), equalTo(VALUE3_VALUE));
-        assertThat(configuration.getProperties().get("workDir"), equalTo(KARAF_HOME + "/test"));
-        assertThat(configuration.getProperties().get("service.factoryPid"), equalTo(TEST_CONFIG_FACTORY_PID));
-        assertThat(configuration.getProperties().get("__osgi_templated_config_name"), equalTo(TEST_CONFIG_FACTORY_PID + "-" + TEST_CONFIG_INSTANCE));
+        assertThat(testConfig.getProperties().get("value1"), equalTo(VALUE1_VALUE));
+        assertThat(testConfig.getProperties().get("value2"), equalTo(VALUE2_VALUE));
+        assertThat(testConfig.getProperties().get("value3"), equalTo(VALUE3_VALUE));
+        assertThat(testConfig.getProperties().get("workDir"), equalTo(KARAF_HOME + "/test"));
+        assertThat(testConfig.getProperties().get("service.factoryPid"), equalTo(TEST_CONFIG_FACTORY_PID));
+        assertThat(testConfig.getProperties().get("__osgi_templated_config_name"), equalTo(TEST_CONFIG_FACTORY_PID + "-" + TEST_CONFIG_INSTANCE));
     }
 
 
