@@ -81,16 +81,19 @@ public class OsgiTemplatedConfigurationSetHandler {
     public void processConfigs(List<ConfigurationEntry> entries) {
         Map<String, Configuration> processedConfigurations = Maps.newHashMap();
 
-        // Updating or creating coresponding configurations.
+        // Updating or creating corresponding configurations.
         for (ConfigurationEntry entry : entries) {
             try {
+                LOGGER.trace("Processing {}", entry.template);
                 if (templateProcessor.isProcess(entry)) {
                     String pidName = templateProcessor.getConfigPidName(entry);
-                    processedConfigurations.put(pidName, setConfig(entry, pidName,
-                            new ByteArrayInputStream(templateProcessor.getConfig(entry).getBytes(Charsets.UTF_8))));
+                    Configuration config = setConfig(entry, pidName,
+                            new ByteArrayInputStream(templateProcessor.getConfig(entry).getBytes(Charsets.UTF_8)));
+                    processedConfigurations.put(pidName, config);
+                    installedConfigs.put(pidName, config);
                 }
             } catch (Exception e) {
-                LOGGER.error("Could not process: " );
+                LOGGER.error("Could not process: ", e);
             }
         }
         Set<Configuration> configurationsToRemove = Sets.difference(ImmutableSet.copyOf(installedConfigs.values()),
@@ -104,8 +107,6 @@ public class OsgiTemplatedConfigurationSetHandler {
                 LOGGER.error("Could not delete config", e);
             }
         }
-        installedConfigs.putAll(processedConfigurations);
-
     }
 
 

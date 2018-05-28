@@ -78,12 +78,16 @@ public class TemplateProcessor {
     @SneakyThrows({ IOException.class, TemplateException.class })
     public boolean isProcess(ConfigurationEntry configurationEntry) {
         if (configurationEntry.getExpression().isPresent()) {
+            String expression = readUrl(configurationEntry.getExpression().get());
+            LOGGER.trace("Expression: " + expression);
             Template t = new Template(configurationEntry.getExpression().get().toString(),
-                    new StringReader("<#if " + readUrl(configurationEntry.getExpression().get()) + ">true<#else>false</#if>"),
+                    new StringReader("<#if " + expression + ">true<#else>false</#if>"),
                     templateConfiguration);
             StringWriter w = new StringWriter();
             t.process(templateProperties, w);
-            if ("true".equalsIgnoreCase(w.toString())) {
+            String result = w.toString();
+            LOGGER.debug("Expression result: {}", result);
+            if ("true".equalsIgnoreCase(result)) {
                 return true;
             }
             return false;

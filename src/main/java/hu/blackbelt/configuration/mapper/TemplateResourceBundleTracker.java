@@ -37,6 +37,7 @@ public class TemplateResourceBundleTracker {
                         LOGGER.debug("addingBundle: " + bundle.getSymbolicName() + " Event: " + (event == null ? "NONE" : String.format("%05X", event.getType())));
                         List<ConfigurationEntry> newEntries = collectConfigEntriesFormBundle(templatePath, bundle);
                         configEntries.put(bundle, newEntries);
+                        LOGGER.trace("new entries: {}", newEntries);
                         configEntriesChecksums.put(bundle, calculateChecksum(newEntries));
                         if (newEntries.size() > 0) {
                             LOGGER.info("Bundle: " + bundle.getSymbolicName() + " entries adding");
@@ -53,6 +54,7 @@ public class TemplateResourceBundleTracker {
                         if (!configEntriesChecksums.get(bundle).equals(newChecksum)) {
                             LOGGER.info("Bundle: " + bundle.getSymbolicName() + " checksum differs, configurations have to be reloaded");
                             configEntries.put(bundle, newEntries);
+                            LOGGER.trace("new entries: {}", newEntries);
                             configEntriesChecksums.put(bundle, newChecksum);
                             configurationEntriesChanged.apply(configEntries.values().stream().flatMap(v -> v.stream()).collect(toList()));
                         }
