@@ -29,7 +29,7 @@ public class TemplateProcessor {
     public static final String DOT = ".";
     public static final String UDERSCORE = "_";
 
-    private final Map<String, Object> templateProperties;
+    private Map<String, Object> templateProperties;
     private final String keyPrefix;
     private final Map<String, Class> defaultTypes;
     private final Map<String, Object> defaultValues;
@@ -45,34 +45,11 @@ public class TemplateProcessor {
         templateConfiguration.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
         templateConfiguration.setDefaultEncoding(Charsets.UTF_8.name());
 
+        setTemplateProperties(props);
+    }
 
-        Map<String, Object> defaultConfigs = processingParameters(defaultValues);
-        Map<String, Object> envConfigs = replacePrefixedKeys(processingParameters(System.getenv()));
-        Map<String, Object> osgiConfigs = processingParameters(props);
-        Map<String, Object> systemConfigs = processingParameters(System.getProperties());
-
-
-        Map<String, Object> configEntries = new HashMap<>();
-        configEntries.putAll(defaultConfigs);
-        configEntries.putAll(osgiConfigs);
-        configEntries.putAll(envConfigs);
-        configEntries.putAll(systemConfigs);
-
-        Map<String, String> configTypeByKey = new HashMap<>();
-        for (String k : configEntries.keySet()) {
-            if (!osgiConfigs.containsKey(k) && !systemConfigs.containsKey(k) && !envConfigs.containsKey(k)) {
-                configTypeByKey.put(k, "default");        
-            } else if (!systemConfigs.containsKey(k) && !envConfigs.containsKey(k)) {
-                configTypeByKey.put(k, "osgi");
-            }  else if (!systemConfigs.containsKey(k)) {
-                configTypeByKey.put(k, "env");
-            } else {
-                configTypeByKey.put(k, "system");
-            }
-        }
-
-        templateProperties = ImmutableMap.copyOf(configEntries);
-        printConfigurations(configTypeByKey, templateProperties);
+    public void updateOsgiConfigs(Map props) {
+        setTemplateProperties(props);
     }
 
     @SneakyThrows({ IOException.class, TemplateException.class })
@@ -123,7 +100,7 @@ public class TemplateProcessor {
     }
 
     @SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:methodlength"})
-    public Map<String, Object> processingParameters(Object dictionary) {
+    private Map<String, Object> processingParameters(Object dictionary) {
         Map<String, Object> ret = new HashMap<>();
 
         Map map;
@@ -169,6 +146,35 @@ public class TemplateProcessor {
             }
         }
         return ImmutableMap.copyOf(ret);
+    }
+
+    private void setTemplateProperties(Map props) {
+        Map<String, Object> defaultConfigs = processingParameters(defaultValues);
+        Map<String, Object> envConfigs = replacePrefixedKeys(processingParameters(System.getenv()));
+        Map<String, Object> osgiConfigs = processingParameters(props);
+        Map<String, Object> systemConfigs = processingParameters(System.getProperties());
+
+        Map<String, Object> configEntries = new HashMap<>();
+        configEntries.putAll(defaultConfigs);
+        configEntries.putAll(osgiConfigs);
+        configEntries.putAll(envConfigs);
+        configEntries.putAll(systemConfigs);
+
+        Map<String, String> configTypeByKey = new HashMap<>();
+        for (String k : configEntries.keySet()) {
+            if (!osgiConfigs.containsKey(k) && !systemConfigs.containsKey(k) && !envConfigs.containsKey(k)) {
+                configTypeByKey.put(k, "default");
+            } else if (!systemConfigs.containsKey(k) && !envConfigs.containsKey(k)) {
+                configTypeByKey.put(k, "osgi");
+            }  else if (!systemConfigs.containsKey(k)) {
+                configTypeByKey.put(k, "env");
+            } else {
+                configTypeByKey.put(k, "system");
+            }
+        }
+
+        templateProperties = ImmutableMap.copyOf(configEntries);
+        printConfigurations(configTypeByKey, templateProperties);
     }
 
     private Map<String, Object> replacePrefixedKeys(Map<String, Object> envConfigs) {
