@@ -19,8 +19,8 @@ import java.io.StringWriter;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-import static hu.blackbelt.configuration.mapper.Utils.readUrl;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Slf4j
@@ -53,12 +53,11 @@ public class TemplateProcessor {
     }
 
     @SneakyThrows({ IOException.class, TemplateException.class })
-    public boolean isProcess(ConfigurationEntry configurationEntry) {
-        if (configurationEntry.getExpression().isPresent()) {
-            String expression = readUrl(configurationEntry.getExpression().get());
-            LOGGER.trace("Expression: " + expression);
-            Template t = new Template(configurationEntry.getExpression().get().toString(),
-                    new StringReader("<#if " + expression + ">true<#else>false</#if>"),
+    public boolean isProcess(String name, Optional<String> expression) {
+        if (expression.isPresent()) {
+            LOGGER.trace("Expression: " + expression.get());
+            Template t = new Template(name,
+                    new StringReader("<#if " + expression.get() + ">true<#else>false</#if>"),
                     templateConfiguration);
             StringWriter w = new StringWriter();
             t.process(templateProperties, w);
@@ -71,22 +70,6 @@ public class TemplateProcessor {
         } else {
             return true;
         }
-    }
-
-    @SneakyThrows({ IOException.class, TemplateException.class })
-    public String getConfigPidName(ConfigurationEntry configurationEntry) {
-        String pidName = configurationEntry.getPidBaseName();
-        if (configurationEntry.getPid().isPresent()) {
-            Template t = new Template(configurationEntry.getPid().get().toString(),
-                    new StringReader(readUrl(configurationEntry.getPid().get())), templateConfiguration);
-            StringWriter w = new StringWriter();
-            t.process(templateProperties, w);
-            String factoryPid = w.toString().trim();
-            if (!factoryPid.isEmpty()) {
-                return pidName + "-" + w.toString();
-            }
-        }
-        return pidName;
     }
 
     @SneakyThrows({ IOException.class, TemplateException.class })

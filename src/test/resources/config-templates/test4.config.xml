@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<components xmlns="http://osgi.blackbelt.hu/configuration/mapper/v1/xml/ns/definition">
+    <component>
+        <condition><![CDATA[context4Bool == "true"]]></condition>
+    </component>
+</components>

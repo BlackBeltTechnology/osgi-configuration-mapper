@@ -126,16 +126,17 @@ public class TemplateResourceBundleTracker {
         return allCorespondingFiles.stream().filter(s -> s.endsWith(".template")).map(s ->
                 {
                     URL templateUrl = bundle.getEntry(s);
-                    Optional<URL> pidUrl = Optional.empty();
-                    Optional<URL> expressionUrl = Optional.empty();
+                    Optional<URL> specUrl = Optional.empty();
+                    Optional<String> instance = Optional.empty();
                     String nameWithoutExtension = s.substring(0, s.lastIndexOf("."));
-                    if (allCorespondingFiles.contains(nameWithoutExtension + ".pid")) {
-                        pidUrl = Optional.of(bundle.getEntry(nameWithoutExtension + ".pid"));
+                    String nameWithoutExtensionAndInstance = nameWithoutExtension.substring(0, nameWithoutExtension.lastIndexOf("-"));
+                    if (allCorespondingFiles.contains(nameWithoutExtension + ".xml")) {
+                        specUrl = Optional.of(bundle.getEntry(nameWithoutExtension + ".xml"));
+                    } else if (allCorespondingFiles.contains(nameWithoutExtensionAndInstance + ".xml")) {
+                        specUrl = Optional.of(bundle.getEntry(nameWithoutExtensionAndInstance + ".xml"));
+                        instance  = Optional.of(nameWithoutExtension.replace(nameWithoutExtensionAndInstance+"-", ""));
                     }
-                    if (allCorespondingFiles.contains(nameWithoutExtension + ".expression")) {
-                        expressionUrl = Optional.of(bundle.getEntry(nameWithoutExtension + ".expression"));
-                    }
-                    return ConfigurationEntry.builder().template(templateUrl).expression(expressionUrl).pid(pidUrl).build();
+                    return ConfigurationEntry.builder().template(templateUrl).spec(specUrl).instance(instance).build();
 
                 }
         ).collect(toList());
