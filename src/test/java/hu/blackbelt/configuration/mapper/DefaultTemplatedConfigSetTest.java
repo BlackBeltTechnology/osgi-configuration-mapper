@@ -45,6 +45,7 @@ public class DefaultTemplatedConfigSetTest {
     private static final String TEST_CONFIG3_FACTORY_PID = "test3.config";
     private static final String TEST_CONFIG4_FACTORY_PID = "test4.config";
     private static final String TEST_CONFIG5_FACTORY_PID = "test5.config";
+    private static final String TEST_CONFIG6_FACTORY_PID = "test6.config";
 
     @Inject
     private ConfigurationAdmin configAdmin;
@@ -76,6 +77,7 @@ public class DefaultTemplatedConfigSetTest {
                         .put("context5aBool", "true")
                         .put("context5bBool", "false")
                         .put("context5cBool", "true")
+                        .put("context6Bool", "true")
                         .put("contextVar3", VALUE3_VALUE)
 
                         .asOption(),
@@ -94,7 +96,7 @@ public class DefaultTemplatedConfigSetTest {
 
     @Test
     public void testAllConfigSets() {
-        assertThat(configurations.size(), equalTo(7));
+        assertThat(configurations.size(), equalTo(8));
     }
 
 
@@ -152,6 +154,16 @@ public class DefaultTemplatedConfigSetTest {
         configurations.stream()
                 .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG5_FACTORY_PID))
                 .forEach(cfg -> assertThat(((String)cfg.getProperties().get("__osgi_templated_config_name")), endsWith(((String)cfg.getProperties().get("name")).toLowerCase())));
+    }
+
+    @Test
+    public void testTemplateWithoutFactoryPID() {
+        final org.osgi.service.cm.Configuration test6Config = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG6_FACTORY_PID))
+                .collect(singletonCollector());
+
+        assertThat(test6Config, notNullValue());
+        assertThat(test6Config.getProperties().get("name"), equalTo("TEST6"));
     }
 
     public static <T> Collector<T, ?, T> singletonCollector() {
