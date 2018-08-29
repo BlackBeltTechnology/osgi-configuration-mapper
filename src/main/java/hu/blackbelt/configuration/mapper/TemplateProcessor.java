@@ -56,7 +56,7 @@ public class TemplateProcessor {
     public boolean isProcess(String name, Optional<String> expression) {
         if (expression.isPresent()) {
             LOGGER.trace("Expression: " + expression.get());
-            Template t = new Template(name,
+            Template t = new Template("E-" + name,
                     new StringReader("<#if " + expression.get() + ">true<#else>false</#if>"),
                     templateConfiguration);
             StringWriter w = new StringWriter();
@@ -70,6 +70,20 @@ public class TemplateProcessor {
         } else {
             return true;
         }
+    }
+
+    @SneakyThrows({ IOException.class, TemplateException.class })
+    public String resolvePid(String name, Optional<String> pidExpression) {
+        if (pidExpression.isPresent()) {
+            Template t = new Template("PID-" + name, pidExpression.get(), templateConfiguration);
+            StringWriter w = new StringWriter();
+            t.process(templateProperties, w);
+            String factoryPid = w.toString().trim();
+            if (!factoryPid.isEmpty()) {
+                return w.toString();
+            }
+        }
+        return null;
     }
 
     @SneakyThrows({ IOException.class, TemplateException.class })

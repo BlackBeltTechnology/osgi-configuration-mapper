@@ -92,30 +92,30 @@ public class OsgiTemplatedConfigurationSetHandler {
                     LOGGER.warn("Missing component instances in configuration mapper XML");
                 } else if (components.getComponents().size() == 1) {
                     final ComponentType component = components.getComponents().iterator().next();
+                    final String factoryPid = templateProcessor.resolvePid(entry.getPidBaseName(), Optional.ofNullable(component.getFactoryPid()));
                     if (entry.getInstance().isPresent()) {
                         final String instance = entry.getInstance().get();
-                        if (!Objects.equals(instance, component.getFactoryPid())) {
-                            LOGGER.warn("Factory PID in configuration mapper XML ({}) and instance postfix of template filename ({}) are not matching", component.getFactoryPid(), instance);
+                        if (!Objects.equals(instance, factoryPid)) {
+                            LOGGER.warn("Factory PID in configuration mapper XML ({}) and instance postfix of template filename ({}) are not matching", factoryPid, instance);
                         } else {
                             createInstance(entry, entry.getPidBaseName() + "-" + instance, Optional.ofNullable(component.getCondition()), processedConfigs);
                         }
                     } else {
-                        final String pidName = component.getFactoryPid() != null && !component.getFactoryPid().trim().isEmpty() ? entry.getPidBaseName() + "-" + component.getFactoryPid().trim() : entry.getPidBaseName();
+                        final String pidName = factoryPid != null && !factoryPid.isEmpty() ? entry.getPidBaseName() + "-" + factoryPid : entry.getPidBaseName();
                         createInstance(entry, pidName, Optional.ofNullable(component.getCondition()), processedConfigs);
                     }
                 } else {
-                    // get factory PID of template!
                     if (!entry.getInstance().isPresent()) {
-                        final Optional<ComponentType> component = components.getComponents().stream().filter(c -> c.getFactoryPid() == null).findFirst();
-                        if (!component.isPresent()) {
-                            LOGGER.warn("Missing instance postfix of template filename: {}", entry.getTemplate());
-                        } else {
-                            createInstance(entry, entry.getPidBaseName(), Optional.ofNullable(component.get().getCondition()), processedConfigs);
-                        }
-                    } else {
-                        components.getComponents().stream().filter(c -> Objects.equals(c.getFactoryPid(), entry.getInstance().get())).forEach(c -> {
-                            createInstance(entry, entry.getPidBaseName() + "-" + c.getFactoryPid(), Optional.ofNullable(c.getCondition()), processedConfigs);
+                        // instances without factory PID and with expression PID will be created based on template without instance name
+                        components.getComponents().stream().filter(c -> c.getFactoryPid() == null || c.getFactoryPid().contains("$")).forEach(c -> {
+                            final String pidName = c.getFactoryPid() != null ? entry.getPidBaseName() + "-" + templateProcessor.resolvePid(entry.getPidBaseName(), Optional.ofNullable(c.getFactoryPid())) : entry.getPidBaseName();
+                            createInstance(entry, pidName, Optional.ofNullable(c.getCondition()), processedConfigs);
                         });
+                    } else {
+                        // matching factory PID will be instantiated
+                        components.getComponents().stream().filter(c -> Objects.equals(
+                                templateProcessor.resolvePid(entry.getPidBaseName(), Optional.ofNullable(c.getFactoryPid())), entry.getInstance().get())).forEach(c ->
+                            createInstance(entry, entry.getPidBaseName() + "-" + entry.getInstance().get(), Optional.ofNullable(c.getCondition()), processedConfigs));
                     }
                 }
             } else {

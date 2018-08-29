@@ -18,9 +18,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.endsWith;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.cleanCaches;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
@@ -46,6 +44,8 @@ public class DefaultTemplatedConfigSetTest {
     private static final String TEST_CONFIG4_FACTORY_PID = "test4.config";
     private static final String TEST_CONFIG5_FACTORY_PID = "test5.config";
     private static final String TEST_CONFIG6_FACTORY_PID = "test6.config";
+    private static final String TEST_CONFIG7_FACTORY_PID = "test7.config";
+    private static final String TEST_CONFIG7_INSTANCE_PID = "T7";
 
     @Inject
     private ConfigurationAdmin configAdmin;
@@ -79,6 +79,8 @@ public class DefaultTemplatedConfigSetTest {
                         .put("context5cBool", "true")
                         .put("context6Bool", "true")
                         .put("contextVar3", VALUE3_VALUE)
+                        .put("template7FactoryPid", TEST_CONFIG7_INSTANCE_PID)
+                        .put("context7Bool", "true")
 
                         .asOption(),
 
@@ -92,11 +94,13 @@ public class DefaultTemplatedConfigSetTest {
     @Before
     public void init() throws IOException, InvalidSyntaxException {
         configurations = Arrays.asList(configAdmin.listConfigurations(null));
+
+        configurations.stream().forEach(cfg -> LOGGER.info(" - {} CFG: {}", cfg.getPid(), cfg.getProperties()));
     }
 
     @Test
     public void testAllConfigSets() {
-        assertThat(configurations.size(), equalTo(8));
+        assertThat(configurations.size(), equalTo(11));
     }
 
 
@@ -164,6 +168,33 @@ public class DefaultTemplatedConfigSetTest {
 
         assertThat(test6Config, notNullValue());
         assertThat(test6Config.getProperties().get("name"), equalTo("TEST6"));
+    }
+
+    @Test
+    public void testTemplateWithExpressionPID() {
+        final org.osgi.service.cm.Configuration test7aConfig = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG7_FACTORY_PID) && ((String)cfg.getProperties().get("__osgi_templated_config_name")).endsWith("-a"))
+                .collect(singletonCollector());
+
+        assertThat(test7aConfig, notNullValue());
+        assertThat(test7aConfig.getProperties().get("name"), equalTo("TEST7-A"));
+
+        final org.osgi.service.cm.Configuration test7DefaultConfig = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG7_FACTORY_PID) && ((String)cfg.getProperties().get("__osgi_templated_config_name")).equals(TEST_CONFIG7_FACTORY_PID))
+                .collect(singletonCollector());
+
+        assertThat(test7DefaultConfig, notNullValue());
+        assertThat(test7DefaultConfig.getProperties().get("name"), equalTo("TEST7"));
+        assertThat(test7DefaultConfig.getProperties().get("instance"), equalTo(TEST_CONFIG7_INSTANCE_PID));
+
+        final org.osgi.service.cm.Configuration test7ExpressionConfig = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG7_FACTORY_PID) && ((String)cfg.getProperties().get("__osgi_templated_config_name")).endsWith("-" + TEST_CONFIG7_INSTANCE_PID))
+                .collect(singletonCollector());
+
+        assertThat(test7ExpressionConfig, notNullValue());
+        assertThat(test7ExpressionConfig.getProperties().get("name"), equalTo("TEST7"));
+        assertThat(test7ExpressionConfig.getProperties().get("instance"), equalTo(TEST_CONFIG7_INSTANCE_PID));
+        assertThat((String)test7ExpressionConfig.getProperties().get("service.pid"), startsWith(TEST_CONFIG7_FACTORY_PID + "."));
     }
 
     public static <T> Collector<T, ?, T> singletonCollector() {
