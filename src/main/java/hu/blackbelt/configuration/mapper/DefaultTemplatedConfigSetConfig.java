@@ -18,4 +18,10 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
                     "as part1Part2 context variable in templates."
     )
     String envPrefix();
+
+    @AttributeDefinition(
+            name = "Variable scope precedence",
+            description = "Comma-separated list of variable scope precedences (first: lowest, last: highest)."
+    )
+    String variableScopePrecedence() default "osgi,environment,system";
 }

@@ -1,0 +1,60 @@
+= OSGi configuration mapper
+
+This project goal is to handle complex OSGi configurations. Configuration options are defined in a single configuration
+file (called configset) and configurations of OSGi components are instantiated based on (Freemarker) templates so
+reusing the same values defined by the single configuration file could be used by multiple templates.
+
+== How it works?
+
+Bundles implementing services could hold configuration templates in a specific directory of JAR file. Tracker component
+detects them and creates component instances via OSGi configuration admin service substituting template variables
+(defined by configuration file named +configset-*.cfg+).
+
+== Configuration options
+
+Here is the list of base configuration options (of configsets):
+
+|===
+| Key | Name | Default | Description
+| +templatePath+ | Template path | +/config-templates+ |
+The template pathes monitored inside bundles
+| +envPrefix+ | Environment prefix | (undefined) |
+Environment prefix used to get environment variables. For example: When X_ prefix used X_PART1_PART2 env variabsle used
+as part1Part2 context variable in templates.
+| +variableScopePrecedence+ | Variable scope preference | +osgi,environment,system+ | Comma-separated list of
+variable scope precedences (first: lowest, last: highest).
+|===
+
+Custom variables are also available in templates.
+
+=== Including configuration in Karaf feature
+
+TODO: aggregated-config + maven-resources-plugin + feature/configfile
+
+== Template variables
+
+Precedence of variable scopes is defined by +variableScopePrecedence+ configuration option (it is not overridable by
+system property or OS environment variable). The following items can be used:
+
+* *osgi*: OSGi configuration options (configset variables)
+* *environment*: OS environment variables
+* *system*: JVM command line arguments (+-D...+)
+
+[NOTE]
+====
+Dot is not supported in Freemarker template variables so dot (.) is replaced with underscore (_).
+====
+
+== Extensions
+
+A basic example is described above but creation of some components depends on *conditional expressions* in some cases.
+Other components have to be instantiated using *factory PID* or *multiple instances* of a gives components are necessary.
+
+An optional XML file (syntax is defined by <<src/main/resources/configuration_mapper_v1.xsd,XML schema>>) could be used
+to override default instantiation settings. Read XML schema for details.
+
+== Template syntax
+
+TODO: conditional expression
+TODO: conditional blocks
+TODO: examples

@@ -49,34 +49,22 @@ public class OsgiTemplatedConfigurationSetHandler {
     private final String id;
     private final ConfigurationAdmin configAdmin;
     private final String envPrefix;
-    private final Map<String, Class> defaultTypes;
-    private final Map<String, Object> defaultValues;
     private final TemplateProcessor templateProcessor;
     private final Unmarshaller unmarshaller;
 
-    /**
-     *
-     * @param configAdmin
-     * @param envPrefix
-     * @param properties
-     * @param defaultTypes
-     * @param defaultValues
-     * @throws IOException
-     */
     @SneakyThrows(JAXBException.class)
-    public OsgiTemplatedConfigurationSetHandler(String id, ConfigurationAdmin configAdmin, String envPrefix, Map properties,
-                                                Map<String, Class> defaultTypes, Map<String, Object> defaultValues) throws IOException {
+    public OsgiTemplatedConfigurationSetHandler(String id, ConfigurationAdmin configAdmin, String envPrefix,
+                                                Map<String, Object> properties,
+                                                List<TemplateProcessor.VariableScope> variableScopePrecedence) {
         this.id = id;
         this.configAdmin = configAdmin;
         this.envPrefix = envPrefix;
-        this.defaultTypes = defaultTypes;
-        this.defaultValues = defaultValues;
-        templateProcessor = new TemplateProcessor(properties, envPrefix, defaultTypes, defaultValues);
+        templateProcessor = new TemplateProcessor(properties, envPrefix, variableScopePrecedence);
         final JAXBContext jc = JAXBContext.newInstance("hu.blackbelt.osgi.configuration.mapper.v1.xml.ns.definition", getClass().getClassLoader());
         unmarshaller = jc.createUnmarshaller();
     }
 
-    public void updateOsgiConfigs(Map properties) {
+    public void updateOsgiConfigs(Map<String, Object> properties) {
         templateProcessor.updateOsgiConfigs(properties);
     }
 
@@ -268,5 +256,3 @@ public class OsgiTemplatedConfigurationSetHandler {
     }
 
 }
-
-
