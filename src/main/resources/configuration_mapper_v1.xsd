@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+	   xmlns="http://osgi.blackbelt.hu/configuration/mapper/v1/xml/ns/definition"
+	   targetNamespace="http://osgi.blackbelt.hu/configuration/mapper/v1/xml/ns/definition">
+
+    <xs:element name="components" type="ComponentsType"/>
+
+    <xs:complexType name="ComponentsType">
+        <xs:annotation>
+            <xs:documentation>List of component instances.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="component" type="ComponentType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ComponentType">
+        <xs:annotation>
+            <xs:documentation>Component (instance) configuration.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="factoryPid" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Factory PID of component instance.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="condition" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Condition if component instance is created.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

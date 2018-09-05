@@ -1,6 +1,7 @@
 package hu.blackbelt.configuration.mapper;
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -17,7 +18,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.cleanCaches;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
@@ -36,9 +37,15 @@ public class DefaultTemplatedConfigSetTest {
     private static final String VALUE2_VALUE = "var2FromSystem";
     private static final String VALUE3_VALUE = "var3FromOsgi";
     private static final String KARAF_HOME = "/karaf";
-    private static final String TEST_CONFIG_FACTORY_PID = "test.config";
-    private static final String TEST_CONFIG_INSTANCE = "instancePid";
-
+    private static final String TEST_CONFIG1_FACTORY_PID = "test1.config";
+    private static final String TEST_CONFIG1_INSTANCE = "tst";
+    private static final String TEST_CONFIG2_FACTORY_PID = "test2.config";
+    private static final String TEST_CONFIG3_FACTORY_PID = "test3.config";
+    private static final String TEST_CONFIG4_FACTORY_PID = "test4.config";
+    private static final String TEST_CONFIG5_FACTORY_PID = "test5.config";
+    private static final String TEST_CONFIG6_FACTORY_PID = "test6.config";
+    private static final String TEST_CONFIG7_FACTORY_PID = "test7.config";
+    private static final String TEST_CONFIG7_INSTANCE_PID = "T7";
 
     @Inject
     private ConfigurationAdmin configAdmin;
@@ -65,8 +72,15 @@ public class DefaultTemplatedConfigSetTest {
                         .put("templatePath", "/config-templates")
                         .put("envPrefix", "PREFIX_")
                         .put("contextBool", "true")
-                        .put("contextFactoryPid", TEST_CONFIG_INSTANCE)
+                        .put("context3Bool", "true")
+                        .put("context4Bool", "false")
+                        .put("context5aBool", "true")
+                        .put("context5bBool", "false")
+                        .put("context5cBool", "true")
+                        .put("context6Bool", "true")
                         .put("contextVar3", VALUE3_VALUE)
+                        .put("template7FactoryPid", TEST_CONFIG7_INSTANCE_PID)
+                        .put("context7Bool", "true")
 
                         .asOption(),
 
@@ -75,24 +89,113 @@ public class DefaultTemplatedConfigSetTest {
                 junitBundles());
     }
 
+    List<org.osgi.service.cm.Configuration> configurations;
+
+    @Before
+    public void init() throws IOException, InvalidSyntaxException {
+        configurations = Arrays.asList(configAdmin.listConfigurations(null));
+
+        configurations.stream().forEach(cfg -> LOGGER.info(" - {} CFG: {}", cfg.getPid(), cfg.getProperties()));
+    }
 
     @Test
-    public void testDefaultTemplatedConfigSet() throws IOException, InvalidSyntaxException {
-        List<org.osgi.service.cm.Configuration> configurations = Arrays.asList(configAdmin.listConfigurations(null));
-        assertThat(configurations.size(), equalTo(2));
+    public void testAllConfigSets() {
+        assertThat(configurations.size(), equalTo(11));
+    }
 
+
+    @Test
+    public void testDefaultTemplatedConfigSet() {
         final org.osgi.service.cm.Configuration testConfig = configurations.stream()
-                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG_FACTORY_PID))
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG1_FACTORY_PID))
                 .collect(singletonCollector());
+
+        assertThat(testConfig, notNullValue());
 
         assertThat(testConfig.getProperties().get("value1"), equalTo(VALUE1_VALUE));
         assertThat(testConfig.getProperties().get("value2"), equalTo(VALUE2_VALUE));
         assertThat(testConfig.getProperties().get("value3"), equalTo(VALUE3_VALUE));
         assertThat(testConfig.getProperties().get("workDir"), equalTo(KARAF_HOME + "/test"));
-        assertThat(testConfig.getProperties().get("service.factoryPid"), equalTo(TEST_CONFIG_FACTORY_PID));
-        assertThat(testConfig.getProperties().get("__osgi_templated_config_name"), equalTo(TEST_CONFIG_FACTORY_PID + "-" + TEST_CONFIG_INSTANCE));
+        assertThat(testConfig.getProperties().get("service.factoryPid"), equalTo(TEST_CONFIG1_FACTORY_PID));
+        assertThat(testConfig.getProperties().get("__osgi_templated_config_name"), equalTo(TEST_CONFIG1_FACTORY_PID + "-" + TEST_CONFIG1_INSTANCE));
     }
 
+    @Test
+    public void testConfigSetWithoutXML() {
+        final org.osgi.service.cm.Configuration test2Config = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG2_FACTORY_PID))
+                .collect(singletonCollector());
+
+        assertThat(test2Config, notNullValue());
+    }
+
+    @Test
+    public void testEnabledConfigSetWithoutFactoryPID() {
+        final org.osgi.service.cm.Configuration test3Config = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG3_FACTORY_PID))
+                .collect(singletonCollector());
+
+        assertThat(test3Config, notNullValue());
+    }
+
+    @Test
+    public void testDisabledConfigSetWithoutFactoryPID() {
+        final int test4ConfigSize = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG4_FACTORY_PID))
+                .collect(Collectors.toList()).size();
+
+        assertThat(test4ConfigSize, equalTo(0));
+    }
+
+    @Test
+    public void testConfigSetWithMultipleInstances() {
+        final int test5ConfigSize = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG5_FACTORY_PID))
+                .collect(Collectors.toList()).size();
+
+        assertThat(test5ConfigSize, equalTo(3));
+
+        configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG5_FACTORY_PID))
+                .forEach(cfg -> assertThat(((String)cfg.getProperties().get("__osgi_templated_config_name")), endsWith(((String)cfg.getProperties().get("name")).toLowerCase())));
+    }
+
+    @Test
+    public void testTemplateWithoutFactoryPID() {
+        final org.osgi.service.cm.Configuration test6Config = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG6_FACTORY_PID))
+                .collect(singletonCollector());
+
+        assertThat(test6Config, notNullValue());
+        assertThat(test6Config.getProperties().get("name"), equalTo("TEST6"));
+    }
+
+    @Test
+    public void testTemplateWithExpressionPID() {
+        final org.osgi.service.cm.Configuration test7aConfig = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG7_FACTORY_PID) && ((String)cfg.getProperties().get("__osgi_templated_config_name")).endsWith("-a"))
+                .collect(singletonCollector());
+
+        assertThat(test7aConfig, notNullValue());
+        assertThat(test7aConfig.getProperties().get("name"), equalTo("TEST7-A"));
+
+        final org.osgi.service.cm.Configuration test7DefaultConfig = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG7_FACTORY_PID) && ((String)cfg.getProperties().get("__osgi_templated_config_name")).equals(TEST_CONFIG7_FACTORY_PID))
+                .collect(singletonCollector());
+
+        assertThat(test7DefaultConfig, notNullValue());
+        assertThat(test7DefaultConfig.getProperties().get("name"), equalTo("TEST7"));
+        assertThat(test7DefaultConfig.getProperties().get("instance"), equalTo(TEST_CONFIG7_INSTANCE_PID));
+
+        final org.osgi.service.cm.Configuration test7ExpressionConfig = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG7_FACTORY_PID) && ((String)cfg.getProperties().get("__osgi_templated_config_name")).endsWith("-" + TEST_CONFIG7_INSTANCE_PID))
+                .collect(singletonCollector());
+
+        assertThat(test7ExpressionConfig, notNullValue());
+        assertThat(test7ExpressionConfig.getProperties().get("name"), equalTo("TEST7"));
+        assertThat(test7ExpressionConfig.getProperties().get("instance"), equalTo(TEST_CONFIG7_INSTANCE_PID));
+        assertThat((String)test7ExpressionConfig.getProperties().get("service.pid"), startsWith(TEST_CONFIG7_FACTORY_PID + "."));
+    }
 
     public static <T> Collector<T, ?, T> singletonCollector() {
         return Collectors.collectingAndThen(

@@ -2,12 +2,17 @@ package hu.blackbelt.configuration.mapper;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Ordering;
+import hu.blackbelt.osgi.configuration.mapper.v1.xml.ns.definition.ComponentType;
+import hu.blackbelt.osgi.configuration.mapper.v1.xml.ns.definition.Components;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,14 +29,13 @@ import static hu.blackbelt.configuration.mapper.Utils.loadProperties;
 import static hu.blackbelt.configuration.mapper.Utils.parsePid;
 import static hu.blackbelt.configuration.mapper.Utils.sha1;
 
-
 /**
  * Tracking and mapping all configurations.
  * It tracks bundles and any bundle have .template file inside the given configPath processing the templates.
  * The template context is the default given properties and defaultValues.
- * The template name before the .template is he PID of the templated process. When .pid file given, the content
- * is the templated factory name. When .expression file given the content is evaulated and when returns true the confid
- * is created otherwise ignored.
+ * The template name before the .template is he PID of the templated process. When .xml file given, the templated
+ * factory PID(s) and a condition(s) (create component instance or not) can be specified. Multiple instances are also
+ * supported.
  */
 @Slf4j
 public class OsgiTemplatedConfigurationSetHandler {
@@ -45,49 +49,66 @@ public class OsgiTemplatedConfigurationSetHandler {
     private final String id;
     private final ConfigurationAdmin configAdmin;
     private final String envPrefix;
-    private final Map<String, Class> defaultTypes;
-    private final Map<String, Object> defaultValues;
     private final TemplateProcessor templateProcessor;
+    private final Unmarshaller unmarshaller;
 
-    /**
-     *
-     * @param configAdmin
-     * @param envPrefix
-     * @param properties
-     * @param defaultTypes
-     * @param defaultValues
-     * @throws IOException
-     */
-    public OsgiTemplatedConfigurationSetHandler(String id, ConfigurationAdmin configAdmin, String envPrefix, Map properties,
-                                                Map<String, Class> defaultTypes, Map<String, Object> defaultValues) throws IOException {
+    @SneakyThrows(JAXBException.class)
+    public OsgiTemplatedConfigurationSetHandler(String id, ConfigurationAdmin configAdmin, String envPrefix,
+                                                Map<String, Object> properties,
+                                                List<TemplateProcessor.VariableScope> variableScopePrecedence) {
         this.id = id;
         this.configAdmin = configAdmin;
         this.envPrefix = envPrefix;
-        this.defaultTypes = defaultTypes;
-        this.defaultValues = defaultValues;
-        templateProcessor = new TemplateProcessor(properties, envPrefix, defaultTypes, defaultValues);
+        templateProcessor = new TemplateProcessor(properties, envPrefix, variableScopePrecedence);
+        final JAXBContext jc = JAXBContext.newInstance("hu.blackbelt.osgi.configuration.mapper.v1.xml.ns.definition", getClass().getClassLoader());
+        unmarshaller = jc.createUnmarshaller();
     }
 
-    public void updateOsgiConfigs(Map properties) {
+    public void updateOsgiConfigs(Map<String, Object> properties) {
         templateProcessor.updateOsgiConfigs(properties);
     }
 
+    @SneakyThrows(JAXBException.class)
     public void processConfigs(List<ConfigurationEntry> entries) {
         // Updating or creating corresponding configurations.
         final Set<Configuration> processedConfigs = new HashSet<>();
         for (ConfigurationEntry entry : entries) {
-            try {
-                LOGGER.debug("Processing {}", entry.template);
-                if (templateProcessor.isProcess(entry)) {
-                    String pidName = templateProcessor.getConfigPidName(entry);
-                    Configuration config = setConfig(entry, pidName,
-                            new ByteArrayInputStream(templateProcessor.getConfig(entry).getBytes(Charsets.UTF_8)));
-                    processedConfigs.add(config);
-                    final String pid = config.getPid();
-                    LOGGER.debug("Created/updated config with PID: {}", pid);
+            LOGGER.debug("Processing {}", entry.template);
+            if (entry.getSpec().isPresent()) {
+                final Components components = (Components)unmarshaller.unmarshal(entry.getSpec().get());
+                if (components == null || components.getComponents().isEmpty()) {
+                    LOGGER.warn("Missing component instances in configuration mapper XML");
+                } else if (components.getComponents().size() == 1) {
+                    final ComponentType component = components.getComponents().iterator().next();
+                    final String factoryPid = templateProcessor.resolvePid(entry.getPidBaseName(), Optional.ofNullable(component.getFactoryPid()));
+                    if (entry.getInstance().isPresent()) {
+                        final String instance = entry.getInstance().get();
+                        if (!Objects.equals(instance, factoryPid)) {
+                            LOGGER.warn("Factory PID in configuration mapper XML ({}) and instance postfix of template filename ({}) are not matching", factoryPid, instance);
+                        } else {
+                            createInstance(entry, entry.getPidBaseName() + "-" + instance, Optional.ofNullable(component.getCondition()), processedConfigs);
+                        }
+                    } else {
+                        final String pidName = factoryPid != null && !factoryPid.isEmpty() ? entry.getPidBaseName() + "-" + factoryPid : entry.getPidBaseName();
+                        createInstance(entry, pidName, Optional.ofNullable(component.getCondition()), processedConfigs);
+                    }
+                } else {
+                    if (!entry.getInstance().isPresent()) {
+                        // instances without factory PID and with expression PID will be created based on template without instance name
+                        components.getComponents().stream().filter(c -> c.getFactoryPid() == null || c.getFactoryPid().contains("$")).forEach(c -> {
+                            final String pidName = c.getFactoryPid() != null ? entry.getPidBaseName() + "-" + templateProcessor.resolvePid(entry.getPidBaseName(), Optional.ofNullable(c.getFactoryPid())) : entry.getPidBaseName();
+                            createInstance(entry, pidName, Optional.ofNullable(c.getCondition()), processedConfigs);
+                        });
+                    } else {
+                        // matching factory PID will be instantiated
+                        components.getComponents().stream().filter(c -> Objects.equals(
+                                templateProcessor.resolvePid(entry.getPidBaseName(), Optional.ofNullable(c.getFactoryPid())), entry.getInstance().get())).forEach(c ->
+                            createInstance(entry, entry.getPidBaseName() + "-" + entry.getInstance().get(), Optional.ofNullable(c.getCondition()), processedConfigs));
+                    }
                 }
-            } catch (Exception e) {
-                LOGGER.error("Could not process: ", e);
+            } else {
+                // XML file is not exists
+                createInstance(entry, entry.getPidBaseName(), Optional.empty(), processedConfigs);
             }
         }
 
@@ -111,6 +132,20 @@ public class OsgiTemplatedConfigurationSetHandler {
                 configuration.delete();
             } catch (IOException | RuntimeException e) {
                 LOGGER.error("Unable to delete configuration", e);
+            }
+        }
+    }
+
+    private void createInstance(final ConfigurationEntry entry, final String pidName, final Optional<String> condition, final Set<Configuration> processedConfigs ) {
+        if (templateProcessor.isProcess(pidName, condition)) {
+            try {
+                Configuration config = setConfig(entry, pidName,
+                        new ByteArrayInputStream(templateProcessor.getConfig(entry).getBytes(Charsets.UTF_8)));
+                final String pid = config.getPid();
+                processedConfigs.add(config);
+                LOGGER.debug("Created/updated config with PID: {}", pid);
+            } catch (Exception ex) {
+                LOGGER.error("Unable to create config", ex);
             }
         }
     }
@@ -221,5 +256,3 @@ public class OsgiTemplatedConfigurationSetHandler {
     }
 
 }
-
-

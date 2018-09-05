@@ -1,0 +1,122 @@
+= OSGi configuration mapper
+
+This project goal is to handle complex OSGi configurations. Configuration options are defined in a single configuration
+file (called configset) and configurations of OSGi components are instantiated based on (Freemarker) templates so
+reusing the same values defined by the single configuration file could be used by multiple templates.
+
+== How it works?
+
+Bundles implementing services could hold configuration templates in a specific directory of JAR file. Tracker component
+detects them and creates component instances via OSGi configuration admin service substituting template variables
+(defined by configuration file named +configset-*.cfg+).
+
+== Configuration options
+
+Here is the list of base configuration options (of configsets):
+
+|===
+| Key | Name | Default | Description
+| +templatePath+ | Template path | +/config-templates+ |
+The template pathes monitored inside bundles
+| +envPrefix+ | Environment prefix | (undefined) |
+Environment prefix used to get environment variables. For example: When X_ prefix used X_PART1_PART2 env variabsle used
+as part1Part2 context variable in templates.
+| +variableScopePrecedence+ | Variable scope preference | +osgi,environment,system+ | Comma-separated list of
+variable scope precedences (first: lowest, last: highest).
+|===
+
+Custom variables are also available in templates.
+
+=== Including configuration in Karaf feature
+
+Default configuration set can be included in Karaf feature. You have to create a Maven artifact (create a directory, put
+configuration set into it and setup maven-resources-plugin and build-helper-maven-plugin Maven plugins) and reference it
+from Karaf feature using configfile element.
+
+[source,xml]
+.Maven configuration fragment
+----
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+            <execution>
+                <id>dummy-properties-copy</id>
+                <phase>process-resources</phase>
+                <goals>
+                    <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <resources>
+                        <resource>
+                            <directory>${basedir}/src/main/resources/aggregated-config</directory>
+                            <filtering>true</filtering>
+                            <includes>
+                                <include>northwind-configuration.properties</include>
+                            </includes>
+                        </resource>
+                    </resources>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
+
+    <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+            <execution>
+                <id>attach-configuration</id>
+                <phase>package</phase>
+                <goals>
+                    <goal>attach-artifact</goal>
+                </goals>
+                <configuration>
+                    <artifacts>
+                        <artifact>
+                            <file>${project.build.directory}/northwind-configuration.properties</file>
+                            <type>cfg</type>
+                            <classifier>default</classifier>
+                        </artifact>
+                    </artifacts>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
+----
+
+[source,xml]
+.Karaf feature definition fragment
+----
+    <feature name="blackbelt-northwind" version="${project.version}" description="Northwind application">
+        <configfile override="false" finalname="/deploy/configset-northwind.cfg">mvn:${project.groupId}/northwind-config/${project.version}/cfg/default</configfile>
+
+        <!-- ... -->
+    </feature>
+----
+
+== Template variables
+
+Precedence of variable scopes is defined by +variableScopePrecedence+ configuration option (it is not overridable by
+system property or OS environment variable). The following items can be used:
+
+* *osgi*: OSGi configuration options (configset variables)
+* *environment*: OS environment variables
+* *system*: JVM command line arguments (+-D...+)
+
+[NOTE]
+====
+Dot is not supported in Freemarker template variables so dot (.) is replaced with underscore (_).
+====
+
+Read Freemarker Programmer's Guide for template file syntax.
+
+== Extensions
+
+A basic example is described above but creation of some components depends on *conditional expressions* in some cases.
+Other components have to be instantiated using *factory PID* or *multiple instances* of a gives components are
+necessary.
+
+An optional XML file (syntax is defined by <<src/main/resources/configuration_mapper_v1.xsd,XML schema>>) could be used
+to override default instantiation settings. Read XML schema for details.
