@@ -46,6 +46,7 @@ public class DefaultTemplatedConfigSetTest {
     private static final String TEST_CONFIG6_FACTORY_PID = "test6.config";
     private static final String TEST_CONFIG7_FACTORY_PID = "test7.config";
     private static final String TEST_CONFIG7_INSTANCE_PID = "T7";
+    private static final String TEST_CONFIG8_FACTORY_PID = "test8.config";
 
     @Inject
     private ConfigurationAdmin configAdmin;
@@ -100,9 +101,8 @@ public class DefaultTemplatedConfigSetTest {
 
     @Test
     public void testAllConfigSets() {
-        assertThat(configurations.size(), equalTo(11));
+        assertThat(configurations.size(), equalTo(12));
     }
-
 
     @Test
     public void testDefaultTemplatedConfigSet() {
@@ -127,6 +127,15 @@ public class DefaultTemplatedConfigSetTest {
                 .collect(singletonCollector());
 
         assertThat(test2Config, notNullValue());
+    }
+
+    @Test
+    public void testConfigSetWithoutXMLWithInstanceName() {
+        final org.osgi.service.cm.Configuration test8Config = configurations.stream()
+                .filter(cfg -> cfg.getPid().startsWith(TEST_CONFIG8_FACTORY_PID))
+                .collect(singletonCollector());
+
+        assertThat(test8Config, notNullValue());
     }
 
     @Test

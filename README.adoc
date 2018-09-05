@@ -6,9 +6,9 @@ reusing the same values defined by the single configuration file could be used b
 
 == How it works?
 
-Bundles implementing services could hold configuration templates in a specific directory of JAR file. Tracker component
-detects them and creates component instances via OSGi configuration admin service substituting template variables
-(defined by configuration file named +configset-*.cfg+).
+Bundles implementing services could hold configuration templates (+*.template+) in a specific directory of JAR file.
+Tracker component detects them and creates component instances via OSGi configuration admin service substituting
+template variables (defined by configuration file named +configset-*.cfg+).
 
 == Configuration options
 
@@ -116,7 +116,32 @@ Read Freemarker Programmer's Guide for template file syntax.
 
 A basic example is described above but creation of some components depends on *conditional expressions* in some cases.
 Other components have to be instantiated using *factory PID* or *multiple instances* of a gives components are
-necessary.
+necessary. Freemarker expression can be used as factory PID in XML file.
 
-An optional XML file (syntax is defined by <<src/main/resources/configuration_mapper_v1.xsd,XML schema>>) could be used
+An optional XML file (syntax is defined by link:src/main/resources/configuration_mapper_v1.xsd[XML schema] could be used
 to override default instantiation settings. Read XML schema for details.
+
+=== How extension works?
+
+Template files are loaded from +templatePath+ defined by configuration set. File name have to match the following
+patterns:
+
+* *_pid_.template*: a new configuration will be created with _pid_ as PID (instance name is not set),
+* *_pid_-_instance_.template*: a new configuration instance named _instance_ will be created with _pid_ AS factory PID
+(instance name is set).
+
+XML configuration file name must be _pid_.xml (for templates with factory PID too). The following rules are applied:
+
+|===
+| . | EMPTY template instance name | NON-EMPTY template instance name
+| MISSING factory PID in XML | single configuration will be created | NO configuration will be created
+| CONSTANT factory PID in XML | NO configuration will be created | configuration instances with matching names will be created only
+| EXPRESSION factory PID in XML | all configuration instances will be created | configuration instances with matching names will be created only
+|===
+
+[NOTE]
+====
+Factory PID is evaluated as expression if it contains a +$+ character.
+====
+
+Factory PID will be used if template has instance name but no XML file exists.

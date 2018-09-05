@@ -2,7 +2,6 @@ package hu.blackbelt.configuration.mapper;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Ordering;
-import hu.blackbelt.osgi.configuration.mapper.v1.xml.ns.definition.ComponentType;
 import hu.blackbelt.osgi.configuration.mapper.v1.xml.ns.definition.Components;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -78,20 +77,6 @@ public class OsgiTemplatedConfigurationSetHandler {
                 final Components components = (Components)unmarshaller.unmarshal(entry.getSpec().get());
                 if (components == null || components.getComponents().isEmpty()) {
                     LOGGER.warn("Missing component instances in configuration mapper XML");
-                } else if (components.getComponents().size() == 1) {
-                    final ComponentType component = components.getComponents().iterator().next();
-                    final String factoryPid = templateProcessor.resolvePid(entry.getPidBaseName(), Optional.ofNullable(component.getFactoryPid()));
-                    if (entry.getInstance().isPresent()) {
-                        final String instance = entry.getInstance().get();
-                        if (!Objects.equals(instance, factoryPid)) {
-                            LOGGER.warn("Factory PID in configuration mapper XML ({}) and instance postfix of template filename ({}) are not matching", factoryPid, instance);
-                        } else {
-                            createInstance(entry, entry.getPidBaseName() + "-" + instance, Optional.ofNullable(component.getCondition()), processedConfigs);
-                        }
-                    } else {
-                        final String pidName = factoryPid != null && !factoryPid.isEmpty() ? entry.getPidBaseName() + "-" + factoryPid : entry.getPidBaseName();
-                        createInstance(entry, pidName, Optional.ofNullable(component.getCondition()), processedConfigs);
-                    }
                 } else {
                     if (!entry.getInstance().isPresent()) {
                         // instances without factory PID and with expression PID will be created based on template without instance name
