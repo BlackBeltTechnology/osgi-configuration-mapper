@@ -33,10 +33,9 @@ Default configuration set can be included in Karaf feature. You have to create a
 configuration set into it and setup maven-resources-plugin and build-helper-maven-plugin Maven plugins) and reference it
 from Karaf feature using configfile element.
 
+[source,xml]
 .Maven configuration fragment
----------------------------------------------------------------------
- [source,xml]
- -------------------------------------------
+----
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
@@ -85,20 +84,17 @@ from Karaf feature using configfile element.
             </execution>
         </executions>
     </plugin>
- -------------------------------------------
----------------------------------------------------------------------
+----
 
+[source,xml]
 .Karaf feature definition fragment
----------------------------------------------------------------------
- [source,xml]
- -------------------------------------------
+----
     <feature name="blackbelt-northwind" version="${project.version}" description="Northwind application">
         <configfile override="false" finalname="/deploy/configset-northwind.cfg">mvn:${project.groupId}/northwind-config/${project.version}/cfg/default</configfile>
 
         <!-- ... -->
     </feature>
- -------------------------------------------
----------------------------------------------------------------------
+----
 
 == Template variables
 
