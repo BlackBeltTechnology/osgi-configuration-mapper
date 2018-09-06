@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<components xmlns="http://osgi.blackbelt.hu/configuration/mapper/v1/xml/ns/definition">
+    <component>
+        <factoryPid>a</factoryPid>
+        <condition><![CDATA[context5aBool == "true"]]></condition>
+    </component>
+    <component>
+        <factoryPid>b</factoryPid>
+        <condition><![CDATA[context5bBool == "true"]]></condition>
+    </component>
+    <component>
+        <factoryPid>c</factoryPid>
+        <condition><![CDATA[context5cBool == "true"]]></condition>
+    </component>
+    <component>
+        <factoryPid>d</factoryPid>
+    </component>
+</components>

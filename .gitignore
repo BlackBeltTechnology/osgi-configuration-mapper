@@ -52,3 +52,6 @@ hs_err_pid*
 /**/*.json-angular
 /**/*$py.class
 .output
+
+.wercker
+wercker.env

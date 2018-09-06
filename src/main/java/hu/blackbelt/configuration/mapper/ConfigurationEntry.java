@@ -19,25 +19,30 @@ import java.util.Optional;
 @SuppressWarnings("checkstyle:missingctor")
 public class ConfigurationEntry implements Serializable {
     URL template;
-    Optional<URL> pid;
-    Optional<URL> expression;
+    Optional<URL> spec;
+    Optional<String> instance;
 
     public String getPidBaseName() {
         String fileName = Paths.get(template.getPath()).getFileName().toString();
-        return fileName.substring(0, fileName.lastIndexOf("."));
+        if (instance.isPresent()) {
+            final String withoutExtension = fileName.substring(0, fileName.lastIndexOf("."));
+            return withoutExtension.substring(0, withoutExtension.lastIndexOf("-" + instance.get()));
+        } else {
+            return fileName.substring(0, fileName.lastIndexOf("."));
+        }
     }
 
     @SneakyThrows(IOException.class)
     public BigInteger checkSum() {
         String str = Utils.readUrl(template);
-        if (pid.isPresent()) {
-            str += Utils.readUrl(pid.get());
+        if (spec.isPresent()) {
+            str += Utils.readUrl(spec.get());
         }
 
-        if (expression.isPresent()) {
-            str += Utils.readUrl(expression.get());
+        if (instance.isPresent()) {
+            str += instance;
         }
-         return Utils.sha1(str);
+        return Utils.sha1(str);
     }
 
     @Override
@@ -49,21 +54,21 @@ public class ConfigurationEntry implements Serializable {
         ConfigurationEntry entry = (ConfigurationEntry) o;
 
         if (getTemplate() != null ? !getTemplate().equals(entry.getTemplate()) : entry.getTemplate() != null) return false;
-        if (getPid().isPresent() ? !getPid().get().equals(entry.getPid().orElse(null)) : entry.getPid().isPresent()) return false;
-        return getExpression().isPresent() ? getExpression().get().equals(entry.getExpression().orElse(null)) : !entry.getExpression().isPresent();
+        if (getSpec().isPresent() ? !getSpec().get().equals(entry.getSpec().orElse(null)) : entry.getSpec().isPresent()) return false;
+        return getInstance().isPresent() ? getInstance().get().equals(entry.getInstance().orElse(null)) : !entry.getInstance().isPresent();
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (getTemplate() != null ? getTemplate().hashCode() : 0);
-        result = 31 * result + (getPid().isPresent() ? getPid().get().hashCode() : 0);
-        result = 31 * result + (getExpression().isPresent() ? getExpression().get().hashCode() : 0);
+        result = 31 * result + (getSpec().isPresent() ? getSpec().get().hashCode() : 0);
+        result = 31 * result + (getInstance().isPresent() ? getInstance().get().hashCode() : 0);
         return result;
     }
 
     public String toString() {
-        return String.format("ConfigurationEntry(template=%s, pid=%s, expression=%s)",
-                this.getTemplate(), this.getPid().orElse(null), this.getExpression().orElse(null));
+        return String.format("ConfigurationEntry(template=%s, spec=%s, instance=%s)",
+                this.getTemplate(), this.getSpec().orElse(null), this.getInstance().orElse(null));
     }
 }

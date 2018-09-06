@@ -16,31 +16,31 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import static hu.blackbelt.configuration.mapper.Utils.readUrl;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Slf4j
 public class TemplateProcessor {
 
     public static final String DOT = ".";
-    public static final String UDERSCORE = "_";
+    public static final String UNDERSCORE = "_";
 
     private Map<String, Object> templateProperties;
     private final String keyPrefix;
-    private final Map<String, Class> defaultTypes;
-    private final Map<String, Object> defaultValues;
+    private final List<VariableScope> variableScopePrecedence;
     private final static String NEWLINE = System.getProperty("line.separator");
+
+    public enum VariableScope {
+        osgi, environment, system
+    }
 
     Configuration templateConfiguration = new Configuration(Configuration.VERSION_2_3_22);
 
-    public TemplateProcessor(Map props, String keyPrefix, Map<String, Class> defaultTypes, Map<String, Object> defaultValues) {
+    public TemplateProcessor(Map<String, Object> props, String keyPrefix, List<VariableScope> variableScopePrecedence) {
         this.keyPrefix = keyPrefix;
-        this.defaultTypes = defaultTypes;
-        this.defaultValues = defaultValues;
+        this.variableScopePrecedence = variableScopePrecedence;
 
         templateConfiguration.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
         templateConfiguration.setDefaultEncoding(Charsets.UTF_8.name());
@@ -48,17 +48,16 @@ public class TemplateProcessor {
         setTemplateProperties(props);
     }
 
-    public void updateOsgiConfigs(Map props) {
+    public void updateOsgiConfigs(Map<String, Object> props) {
         setTemplateProperties(props);
     }
 
     @SneakyThrows({ IOException.class, TemplateException.class })
-    public boolean isProcess(ConfigurationEntry configurationEntry) {
-        if (configurationEntry.getExpression().isPresent()) {
-            String expression = readUrl(configurationEntry.getExpression().get());
-            LOGGER.trace("Expression: " + expression);
-            Template t = new Template(configurationEntry.getExpression().get().toString(),
-                    new StringReader("<#if " + expression + ">true<#else>false</#if>"),
+    public boolean isProcess(String name, Optional<String> expression) {
+        if (expression.isPresent()) {
+            LOGGER.trace("Expression: " + expression.get());
+            Template t = new Template("E-" + name,
+                    new StringReader("<#if " + expression.get() + ">true<#else>false</#if>"),
                     templateConfiguration);
             StringWriter w = new StringWriter();
             t.process(templateProperties, w);
@@ -74,19 +73,17 @@ public class TemplateProcessor {
     }
 
     @SneakyThrows({ IOException.class, TemplateException.class })
-    public String getConfigPidName(ConfigurationEntry configurationEntry) {
-        String pidName = configurationEntry.getPidBaseName();
-        if (configurationEntry.getPid().isPresent()) {
-            Template t = new Template(configurationEntry.getPid().get().toString(),
-                    new StringReader(readUrl(configurationEntry.getPid().get())), templateConfiguration);
+    public String resolvePid(String name, Optional<String> pidExpression) {
+        if (pidExpression.isPresent()) {
+            Template t = new Template("PID-" + name, pidExpression.get(), templateConfiguration);
             StringWriter w = new StringWriter();
             t.process(templateProperties, w);
             String factoryPid = w.toString().trim();
             if (!factoryPid.isEmpty()) {
-                return pidName + "-" + w.toString();
+                return w.toString();
             }
         }
-        return pidName;
+        return null;
     }
 
     @SneakyThrows({ IOException.class, TemplateException.class })
@@ -99,77 +96,39 @@ public class TemplateProcessor {
         return  w.toString();
     }
 
-    @SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:methodlength"})
-    private Map<String, Object> processingParameters(Object dictionary) {
-        Map<String, Object> ret = new HashMap<>();
-
-        Map map;
-        if (dictionary instanceof Dictionary) {
-            map = Utils.fromDictionary((Dictionary) dictionary);
-        } else if (dictionary instanceof Map) {
-            map = (Map) dictionary;
-        } else {
-            throw new IllegalArgumentException("processingParameter type can be Map or Dictionary");
-        }
-
-        for (Object key : map.keySet()) {
-            String k = (String) key;
-            String newk = k;
-            if (k.contains(DOT)) {
-                newk = k.replace(DOT, UDERSCORE).toUpperCase();
-            }
-            Class propType = String.class;
-            if (defaultTypes.containsKey(k)) {
-                propType = defaultTypes.get(k);
-            }
-            Object propDefault = null;
-            if (defaultValues.containsKey(k)) {
-                propDefault = defaultValues.get(k);
-            }
-
-            if (propType == String.class) {
-                ret.put(newk, Utils.toString(map.get(k), (String) propDefault));
-            } else if (propType == Long.class) {
-                ret.put(newk, Utils.toLong(map.get(k), (Long) propDefault));
-            } else if (propType == Boolean.class) {
-                ret.put(newk, Utils.toBoolean(map.get(k), (Boolean) propDefault));
-            } else if (propType == Integer.class) {
-                ret.put(newk, Utils.toInteger(map.get(k), (Integer) propDefault));
-            } else if (propType == Double.class) {
-                ret.put(newk, Utils.toDouble(map.get(k), (Double) propDefault));
-            } else if (propType == String[].class) {
-                ret.put(newk, Utils.toStringArray(map.get(k), (String[]) propDefault));
-            } else if (propType == Map.class) {
-                ret.put(newk, Utils.toMap(map.get(k), (String[]) propDefault));
-            } else {
-                throw new IllegalArgumentException("Unknown type: " + propType);
-            }
-        }
-        return ImmutableMap.copyOf(ret);
+    /**
+     * Process configuration parameters, ie. replace special (dot) character in keys.
+     *
+     * @param parameters configuration parameters
+     * @return processed configuration parameters
+     */
+    private Map<String, Object> processingParameters(final Map<String, ? extends Object> parameters) {
+        return ImmutableMap.copyOf(parameters.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().replace(DOT, UNDERSCORE), Map.Entry::getValue)));
     }
 
-    private void setTemplateProperties(Map props) {
-        Map<String, Object> defaultConfigs = processingParameters(defaultValues);
-        Map<String, Object> envConfigs = replacePrefixedKeys(processingParameters(System.getenv()));
-        Map<String, Object> osgiConfigs = processingParameters(props);
-        Map<String, Object> systemConfigs = processingParameters(System.getProperties());
+    private void setTemplateProperties(Map<String, Object> props) {
+        final Map<String, Object> osgiConfigs = processingParameters(props);
+        final Map<String, Object> envConfigs = replacePrefixedKeys(processingParameters(System.getenv()));
+        final Map systemParameters = Utils.fromDictionary(System.getProperties());
+        final Map<String, Object> systemConfigs = processingParameters((Map<String, Object>) systemParameters);
 
-        Map<String, Object> configEntries = new HashMap<>();
-        configEntries.putAll(defaultConfigs);
-        configEntries.putAll(osgiConfigs);
-        configEntries.putAll(envConfigs);
-        configEntries.putAll(systemConfigs);
+        final Map<String, Object> configEntries = new HashMap<>();
+        for (final VariableScope scope : variableScopePrecedence) {
+            switch (scope) {
+                case osgi: configEntries.putAll(osgiConfigs); break;
+                case environment: configEntries.putAll(envConfigs); break;
+                case system: configEntries.putAll(systemConfigs); break;
+            }
+        }
 
-        Map<String, String> configTypeByKey = new HashMap<>();
+        Map<String, VariableScope> configTypeByKey = new HashMap<>();
         for (String k : configEntries.keySet()) {
-            if (!osgiConfigs.containsKey(k) && !systemConfigs.containsKey(k) && !envConfigs.containsKey(k)) {
-                configTypeByKey.put(k, "default");
-            } else if (!systemConfigs.containsKey(k) && !envConfigs.containsKey(k)) {
-                configTypeByKey.put(k, "osgi");
+            if (!systemConfigs.containsKey(k) && !envConfigs.containsKey(k)) {
+                configTypeByKey.put(k, VariableScope.osgi);
             }  else if (!systemConfigs.containsKey(k)) {
-                configTypeByKey.put(k, "env");
+                configTypeByKey.put(k, VariableScope.environment);
             } else {
-                configTypeByKey.put(k, "system");
+                configTypeByKey.put(k, VariableScope.system);
             }
         }
 
@@ -191,7 +150,7 @@ public class TemplateProcessor {
         return transformedEnvConfigs;
     }
 
-    private void printConfigurations(Map<String, String> configTypesByKey, Map<String, Object> properties) {
+    private void printConfigurations(Map<String, VariableScope> configTypesByKey, Map<String, Object> properties) {
         StringBuilder b = new StringBuilder();
         b.append("Properties used for configuration template: \n");
         for (String k : Ordering.natural().sortedCopy(properties.keySet())) {

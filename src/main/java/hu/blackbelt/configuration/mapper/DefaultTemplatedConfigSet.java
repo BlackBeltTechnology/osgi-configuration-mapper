@@ -1,6 +1,5 @@
 package hu.blackbelt.configuration.mapper;
 
-import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -8,9 +7,7 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.*;
 import org.osgi.service.metatype.annotations.Designate;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Component(name = "configset", immediate = true, configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = DefaultTemplatedConfigSetConfig.class)
@@ -26,23 +23,23 @@ public class DefaultTemplatedConfigSet {
     private String id;
     private String envPrefix;
     private String templatePath;
+    private List<TemplateProcessor.VariableScope> variableScopePrecedence;
 
     @Activate
-    protected void activate(DefaultTemplatedConfigSetConfig config, BundleContext context, Map<String, Object> properties)
-            throws IOException {
+    protected void activate(DefaultTemplatedConfigSetConfig config, BundleContext context, Map<String, Object> properties) {
         id = String.valueOf(properties.get(Constants.SERVICE_PID));
         LOGGER.info("Activating config set: " + id);
 
         templatePath = config.templatePath();
         envPrefix = config.envPrefix();
+        variableScopePrecedence = Collections.unmodifiableList(loadVariableSciptPrecedence(config.variableScopePrecedence()));
 
         osgiTemplatedConfigurationSetHandler = new OsgiTemplatedConfigurationSetHandler(
                 id,
                 configurationAdmin,
                 envPrefix,
                 properties,
-                ImmutableMap.of(),
-                ImmutableMap.of());
+                variableScopePrecedence);
 
         templateResourceBundleTracker = new TemplateResourceBundleTracker(
                 context,
@@ -62,6 +59,10 @@ public class DefaultTemplatedConfigSet {
         if (!Objects.equals(envPrefix, config.envPrefix())) {
             LOGGER.warn("Changing environment prefix without restarting component is not supported");
         }
+        final List<TemplateProcessor.VariableScope> newScopePrecedence = loadVariableSciptPrecedence(config.variableScopePrecedence());
+        if (!Objects.equals(variableScopePrecedence, newScopePrecedence)) {
+            LOGGER.warn("Changing variable scope precedence without restarting component is not supported");
+        }
 
         osgiTemplatedConfigurationSetHandler.updateOsgiConfigs(properties);
         templateResourceBundleTracker.refreshAllBundles();
@@ -78,4 +79,15 @@ public class DefaultTemplatedConfigSet {
         id = null;
     }
 
+    private List<TemplateProcessor.VariableScope> loadVariableSciptPrecedence(String value) {
+        final List<TemplateProcessor.VariableScope> list = new LinkedList<>();
+
+        if (value != null) {
+            for (final String s : value.split("\\s*,\\s*")) {
+                list.add(TemplateProcessor.VariableScope.valueOf(s));
+            }
+        }
+
+        return list;
+    }
 }

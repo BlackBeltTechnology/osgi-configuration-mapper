@@ -1,0 +1,3 @@
+name=TEST7
+instance=${template7FactoryPid ! "DEFAULT"}
+
