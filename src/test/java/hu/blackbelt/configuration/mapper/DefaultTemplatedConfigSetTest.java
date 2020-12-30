@@ -19,12 +19,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.ops4j.pax.exam.CoreOptions.bundle;
-import static org.ops4j.pax.exam.CoreOptions.cleanCaches;
-import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.systemPackages;
+import static org.ops4j.pax.exam.CoreOptions.*;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 
 @RunWith(PaxExam.class)
@@ -47,6 +42,7 @@ public class DefaultTemplatedConfigSetTest {
     private static final String TEST_CONFIG7_FACTORY_PID = "test7.config";
     private static final String TEST_CONFIG7_INSTANCE_PID = "T7";
     private static final String TEST_CONFIG8_FACTORY_PID = "test8.config";
+    public static final String SYSTEM_VARIABLE = "systemVariable";
 
     @Inject
     private ConfigurationAdmin configAdmin;
@@ -54,17 +50,42 @@ public class DefaultTemplatedConfigSetTest {
     @Configuration
     public Option[] config() {
         System.getProperties().put("KARAF_HOME", KARAF_HOME);
+        System.getProperties().put(SYSTEM_VARIABLE, SYSTEM_VARIABLE);
         System.getProperties().put("contextVar2", VALUE2_VALUE);
 
         return options(
                 cleanCaches(),
+
+                bootDelegationPackage("com.sun.*"),
+
                 systemPackages("org.w3c.dom.traversal"),
 
-                mavenBundle("org.apache.felix", "org.apache.felix.scr", "2.0.12"),
-                mavenBundle("org.apache.felix", "org.apache.felix.configadmin", "1.8.16"),
+                environment("PREFIX_ENV=testFromEnv"),
+
+                mavenBundle("org.apache.servicemix.specs", "org.apache.servicemix.specs.activation-api-1.2.1", "1.2.1_3"),
+
+//                mavenBundle("javax.xml.bind", "jaxb-api", "2.3.1"),
+//                mavenBundle("com.sun.xml.bind", "jaxb-osgi", "2.3.3"),
+//                mavenBundle("org.apache.servicemix.bundles", "org.apache.servicemix.bundles.jaxb-runtime", "2.3.2_2"),
+
+                mavenBundle("org.apache.servicemix.specs", "org.apache.servicemix.specs.stax-api-1.0", "2.9.0"),
+                mavenBundle("org.apache.servicemix.specs", "org.apache.servicemix.specs.jaxb-api-2.2", "2.2.0"),
+                mavenBundle("org.apache.servicemix.bundles", "org.apache.servicemix.bundles.jaxb-impl", "2.2.11_1"),
+
+
+                mavenBundle("org.osgi", "org.osgi.util.promise", "1.1.1"),
+                mavenBundle("org.osgi", "org.osgi.util.function", "1.1.0"),
+                mavenBundle("org.apache.felix", "org.apache.felix.scr", "2.1.20"),
+                mavenBundle("org.apache.felix", "org.apache.felix.configadmin", "1.9.16"),
+
+
+                mavenBundle("org.slf4j", "slf4j-api", "1.6.1"),
+                mavenBundle("ch.qos.logback", "logback-core", "1.0.6"),
+                mavenBundle("ch.qos.logback", "logback-classic", "1.0.6"),
 
                 // Dependencies
-                mavenBundle("com.google.guava", "guava", "21.0"),
+                mavenBundle("com.google.guava", "failureaccess", "1.0.1"),
+                mavenBundle("com.google.guava", "guava", "27.1-jre"),
                 mavenBundle("org.apache.servicemix.bundles", "org.apache.servicemix.bundles.freemarker", "2.3.22_1"),
 
                 bundle("reference:file:target/classes"),
@@ -111,6 +132,10 @@ public class DefaultTemplatedConfigSetTest {
                 .collect(singletonCollector());
 
         assertThat(testConfig, notNullValue());
+
+        assertThat(testConfig.getProperties().get("env"), equalTo("testFromEnv"));
+        assertThat(testConfig.getProperties().get("anotherEnv"), equalTo("testFromAnotherEnv"));
+        assertThat(testConfig.getProperties().get(SYSTEM_VARIABLE), equalTo(SYSTEM_VARIABLE));
 
         assertThat(testConfig.getProperties().get("value1"), equalTo(VALUE1_VALUE));
         assertThat(testConfig.getProperties().get("value2"), equalTo(VALUE2_VALUE));

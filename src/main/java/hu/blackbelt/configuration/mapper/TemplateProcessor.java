@@ -132,8 +132,12 @@ public class TemplateProcessor {
             }
         }
 
-        templateProperties = ImmutableMap.copyOf(configEntries);
-        printConfigurations(configTypeByKey, templateProperties);
+        templateProperties = new HashMap(configEntries);
+        templateProperties.put("system", Utils.fromDictionary(System.getProperties()));
+        templateProperties.put("environment", System.getenv());
+        templateProperties = ImmutableMap.copyOf(templateProperties);
+
+        printConfigurations(configTypeByKey, configEntries);
     }
 
     private Map<String, Object> replacePrefixedKeys(Map<String, Object> envConfigs) {
@@ -143,8 +147,6 @@ public class TemplateProcessor {
             if (k.startsWith(keyPrefix)) {
                 String newKey = CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, k.substring(keyPrefix.length()));
                 transformedEnvConfigs.put(newKey, envConfigs.get(k));
-            } else {
-                transformedEnvConfigs.put(k, envConfigs.get(k));
             }
         }
         return transformedEnvConfigs;

@@ -105,6 +105,11 @@ system property or OS environment variable). The following items can be used:
 * *environment*: OS environment variables
 * *system*: JVM command line arguments (+-D...+)
 
+All environment and system variables can be accessed. For example:
+Access system variables: use `${system.<variableName>}`
+Access environment variables: use `${environment.<variableName>}`
+These are accessible as it is, there is no precedence or change of name there.
+
 [NOTE]
 ====
 Dot is not supported in Freemarker template variables so dot (.) is replaced with underscore (_).

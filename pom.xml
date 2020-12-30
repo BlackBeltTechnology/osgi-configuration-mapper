@@ -57,8 +57,8 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <pax.exam.framework>felix</pax.exam.framework>
         <pax.exam.logging>none</pax.exam.logging>
-        <felix.osgi.version>5.2.0</felix.osgi.version>
-        <exam.version>4.11.0</exam.version>
+        <felix.osgi.version>5.6.12</felix.osgi.version>
+        <exam.version>4.13.4</exam.version>
         <url.version>1.6.0</url.version>
     </properties>
     
@@ -85,7 +85,12 @@
                 
                 <configuration>
                     <instructions>
-                        <Import-Package>!lombok, com.google.common*;version="(15,30]", *</Import-Package>
+                        <Import-Package>
+                            !lombok,
+                            *
+                        </Import-Package>
+<!--                             javax.xml.bind;version="[2.3,3)", -->
+
                     </instructions>
                 </configuration>
             </plugin>
@@ -109,9 +114,22 @@
                             <xjbSources>
                                 <xjbSoure>src/main/bindings/SkipElementProperties.xjc</xjbSoure>
                             </xjbSources>
+                            <generateEpisode>false</generateEpisode>
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.glassfish.jaxb</groupId>
+                        <artifactId>jaxb-xjc</artifactId>
+                        <version>2.3.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>com.sun.activation</groupId>
+                        <artifactId>jakarta.activation</artifactId>
+                        <version>1.2.1</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             
             <!--
@@ -129,7 +147,18 @@
              </executions>
              </plugin>
              -->
-            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <environmentVariables>
+                        <PREFIX_ENV>testFromEnv</PREFIX_ENV>
+                        <ANOTHER_ENV>testFromAnotherEnv</ANOTHER_ENV>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+
             <!-- Needed if you use versionAsInProject() -->
             <plugin>
                 <groupId>org.apache.servicemix.tooling</groupId>
@@ -216,7 +245,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>15.0</version>
+            <version>27.0-jre</version>
         </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>
@@ -226,9 +255,16 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.10</version>
+            <version>1.18.4</version>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.2</version>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
