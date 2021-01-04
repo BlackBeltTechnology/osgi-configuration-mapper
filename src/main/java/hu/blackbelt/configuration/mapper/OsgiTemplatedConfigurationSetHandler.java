@@ -59,7 +59,10 @@ public class OsgiTemplatedConfigurationSetHandler {
         this.configAdmin = configAdmin;
         this.envPrefix = envPrefix;
         templateProcessor = new TemplateProcessor(properties, envPrefix, variableScopePrecedence);
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
         final JAXBContext jc = JAXBContext.newInstance("hu.blackbelt.osgi.configuration.mapper.v1.xml.ns.definition", getClass().getClassLoader());
+        Thread.currentThread().setContextClassLoader(cl);
         unmarshaller = jc.createUnmarshaller();
     }
 

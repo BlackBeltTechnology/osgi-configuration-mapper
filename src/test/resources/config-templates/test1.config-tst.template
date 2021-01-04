@@ -1,4 +1,8 @@
 # Test Properties
+env=${env}
+anotherEnv=${environment.ANOTHER_ENV}
+systemVariable=${system.systemVariable}
+
 value1=${contextVar1 ! "contextVar1TemplateDefault"}
 value2=${contextVar2 ! "contextVar2TemplateDefault"}
 value3=${contextVar3 ! "contextVar2TemplateDefault"}
