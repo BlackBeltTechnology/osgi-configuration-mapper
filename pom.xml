@@ -9,19 +9,39 @@
     <name>OSGi Configuration mapper</name>
     <description>OSGi configuration mapper.</description>
     
-    <url>http://github.com/BlackBeltTechnology/osgi-configuration-mapper</url>
     
+    <properties>
+        <project-shortname>osgi-configuration-mapper</project-shortname>
+        <project-repositoryId>BlackBeltTechnology/osgi-configuration-mapper</project-repositoryId>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <timestamp>${maven.build.timestamp}</timestamp>
+        <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+        <src.dir>src/main</src.dir>
+        
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <pax.exam.framework>felix</pax.exam.framework>
+        <pax.exam.logging>none</pax.exam.logging>
+        <felix.osgi.version>5.6.12</felix.osgi.version>
+        <exam.version>4.13.4</exam.version>
+        <url.version>1.6.0</url.version>
+
+    </properties>
+
+    <url>http://github.com/${project-repositoryId}</url>
+
     <issueManagement>
-        <url>https://github.com/BlackBeltTechnology/osgi-configuration-mapper/issues</url>
+        <url>https://github.com/${project-repositoryId}/issues</url>
         <system>GitHub Issues</system>
     </issueManagement>
-    
+
     <scm>
-        <connection>scm:git:git://github.com/BlackBeltTechnology/osgi-configuration-mapper.git</connection>
-        <developerConnection>scm:git:ssh://${git.username}@github.com:BlackBeltTechnology/osgi-configuration-mapper.git</developerConnection>
-        <url>http://github.com/BlackBeltTechnology/osgi-configuration-mapper</url>
+        <connection>scm:git:git@github.com:${project-repositoryId}.git</connection>
+        <developerConnection>scm:git:ssh://${git.username}@github.com:${project-repositoryId}.git
+        </developerConnection>
+        <url>http://github.com/${project-repositoryId}</url>
     </scm>
-    
+
     <developers>
         <developer>
             <id>borcsokj</id>
@@ -50,17 +70,6 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <pax.exam.framework>felix</pax.exam.framework>
-        <pax.exam.logging>none</pax.exam.logging>
-        <felix.osgi.version>5.6.12</felix.osgi.version>
-        <exam.version>4.13.4</exam.version>
-        <url.version>1.6.0</url.version>
-    </properties>
     
     <build>
         <plugins>
@@ -364,26 +373,37 @@
                     <plugin>
                         <groupId>de.jutzig</groupId>
                         <artifactId>github-release-plugin</artifactId>
-                        <version>1.2.0</version>
+                        <version>1.4.0</version>
+                        <inherited>false</inherited>
                         <configuration>
-                            <repositoryId>https://github.com/BlackBeltTechnology/osgi-configuration-mapper.git</repositoryId>
-                            <description>Branch: ${env.WERCKER_GIT_BRANCH} Wercker: ${env.WERCKER_RUN_URL}</description>
+                            <repositoryId>${project-repositoryId}</repositoryId>
+                            <description>
+                                **Branch:** ${env.WERCKER_GIT_BRANCH}
+                                **Maven repository:** ${env.JUDONG_MAVEN_UPSTREAM_SNAPSHOT}/#browse/browse:maven-judo-release:hu%2Fblackbelt%2Feclipse%2F${project-shortname}
+                                **Wercker:** https://app.wercker.com/${project-repositoryId}/runs/build/${env.WERCKER_RUN_ID}
+                            </description>
                             <releaseName>${project.version}</releaseName>
                             <prerelease>true</prerelease>
                             <tag>${project.version}</tag>
+                            <deleteRelease>true</deleteRelease>
+                            <commitish>${env.WERCKER_GIT_COMMIT}</commitish>
+                            <!--
                             <fileSets>
                                 <fileSet>
-                                    <directory>target</directory>
+                                    <directory>${basedir}</directory>
                                     <includes>
-                                        <include>*.jar</include>
+                                        <include>**/target/*.jar</include>
+                                        <include>**/target/*.kar</include>
+                                        <include>${project-shortname}-karaf-features/target/feature/feature.xml</include>
                                     </includes>
                                 </fileSet>
                             </fileSets>
+                            -->
                         </configuration>
                         <executions>
                             <execution>
                                 <id>release-to-github</id>
-                                <phase>install</phase>
+                                <phase>deploy</phase>
                                 <goals>
                                     <goal>release</goal>
                                 </goals>
