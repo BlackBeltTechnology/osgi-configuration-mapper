@@ -26,6 +26,15 @@
         
     </servers>
     
+    <mirrors>
+        <mirror>
+            <id>internal-repository</id>
+            <name>Maven Repository Manager running on https://repo1.maven.org/maven2</name>
+            <url>https://repo1.maven.org/maven2</url>
+            <mirrorOf>*</mirrorOf>
+        </mirror>
+    </mirrors>
+    
     <profiles>
         <profile>
             <id>ossrh</id>
