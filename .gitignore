@@ -55,3 +55,4 @@ hs_err_pid*
 
 .wercker
 wercker.env
+.release
