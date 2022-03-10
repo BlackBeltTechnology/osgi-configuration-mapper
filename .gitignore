@@ -56,3 +56,4 @@ hs_err_pid*
 .wercker
 wercker.env
 .release
+**/.flattened-pom.xml
