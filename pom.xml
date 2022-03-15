@@ -25,6 +25,7 @@
         <felix.osgi.version>5.6.12</felix.osgi.version>
         <exam.version>4.13.4</exam.version>
         <url.version>1.6.0</url.version>
+        <revision>1.0.1-SNAPSHOT</revision>
 
     </properties>
 
