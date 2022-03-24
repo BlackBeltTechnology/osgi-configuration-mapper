@@ -154,4 +154,3 @@ jobs:
           body: >
             This PR is auto-generated. Increasing development version and creates a pull request to develop.
           labels: release, automated pr
-

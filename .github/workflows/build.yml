@@ -57,7 +57,7 @@ jobs:
           POM_VERSION=$(./mvnw org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dtycho.mode=maven -DskipModules=true -Dexpression=project.version -q -DforceStdout)
           if [[ "${{ github.base_ref }}" == "master" ]]; then
             BASE_VERSION=${POM_VERSION}
-            VERSION_NUMBER=${BASE_VERSION}            
+            VERSION_NUMBER=${BASE_VERSION}
           else
             BASE_VERSION=$(echo "${POM_VERSION}" | cut -d'-' -f 1)
             TAG_NAME=$(echo "${{ steps.context.outputs.branch }}" | cut -d ' ' -f2 | tr '#\/\.-' '_')
@@ -111,7 +111,7 @@ jobs:
         run: |-
           ./mvnw -B -Dstyle.color=always \
           -Drevision=${{ steps.version.outputs.version }} \
-          DdeployOnly \
+          -DdeployOnly \
           -P"release-central,sign-artifacts,-verify-feature" \
           -Dmaven.test.skip=true \
           deploy
@@ -130,8 +130,8 @@ jobs:
 
       - name: Tag to trigger PR merge on increment / release branch
         if: |-
-          ${{ always() && 
-          (contains(github.head_ref, 'increment') || contains(github.head_ref, 'release')) && 
+          ${{ always() &&
+          (contains(github.head_ref, 'increment') || contains(github.head_ref, 'release')) &&
           job.status == 'success' }}
         uses: actions/github-script@v5
         with:
@@ -146,9 +146,9 @@ jobs:
 
       - name: Tag to trigger release on master / develop branch
         if: |-
-          ${{ always() && 
-          (contains(github.head_ref, 'develop') || contains(github.ref, 'develop') || 
-            contains(github.head_ref, 'master') || contains(github.ref, 'master')) && 
+          ${{ always() &&
+          (contains(github.head_ref, 'develop') || contains(github.ref, 'develop') ||
+            contains(github.head_ref, 'master') || contains(github.ref, 'master')) &&
           job.status == 'success' }}
         uses: actions/github-script@v5
         with:
@@ -170,10 +170,10 @@ jobs:
             message="${message} Version: ${{ steps.version.outputs.version }}"
           fi
           if [ "${{ job.status }}" == "failure" ]; then
-            message=":x: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"    
+            message=":x: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           fi
           if [ "${{ job.status }}" == "canceled" ]; then
-            message=":x: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"    
+            message=":x: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           fi
           echo "::set-output name=message::${message}"
 
