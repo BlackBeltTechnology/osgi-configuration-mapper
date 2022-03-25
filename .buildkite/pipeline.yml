@@ -1,6 +1,0 @@
-# .buildkite/pipeline.yml
-steps:
-  - name: "build"
-    command: ".buildkite/run.sh"
-    agents:
-      target: builder-default
