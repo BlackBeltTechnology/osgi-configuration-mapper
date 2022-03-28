@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>hu.blackbelt</groupId>
     <artifactId>osgi-configuration-mapper</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>bundle</packaging>
     
     <name>OSGi Configuration mapper</name>
@@ -17,14 +17,18 @@
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
         <src.dir>src/main</src.dir>
-        
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+
+        <deployOnly>false</deployOnly>
+        <maven>3.8.3</maven>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <pax.exam.framework>felix</pax.exam.framework>
         <pax.exam.logging>none</pax.exam.logging>
         <felix.osgi.version>5.6.12</felix.osgi.version>
         <exam.version>4.13.4</exam.version>
         <url.version>1.6.0</url.version>
+        <karaf-version>4.3.4</karaf-version>
+        <revision>1.0.1-SNAPSHOT</revision>
 
     </properties>
 
@@ -37,7 +41,8 @@
 
     <scm>
         <connection>scm:git:git@github.com:${project-repositoryId}.git</connection>
-        <developerConnection>scm:git:ssh://${git.username}@github.com:${project-repositoryId}.git
+        <developerConnection>
+            scm:git:ssh://${git.username}@github.com:BlackBeltTechnology/karaf-features-${project.artifactId}.git
         </developerConnection>
         <url>http://github.com/${project-repositoryId}</url>
     </scm>
@@ -72,6 +77,59 @@
     </licenses>
     
     <build>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.karaf.tooling</groupId>
+                    <artifactId>karaf-maven-plugin</artifactId>
+                    <version>${karaf-version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>2.5.2</version>
+                    <executions>
+                        <execution>
+                            <id>default-install</id>
+                            <configuration>
+                                <skip>${deployOnly}</skip>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>default-test</id>
+                            <configuration>
+                                <skip>${deployOnly}</skip>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>2.8.2</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.7.0</version>
+                    <configuration>
+                        <source>11</source>
+                        <target>11</target>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.0.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -96,34 +154,20 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>5.1.2</version>
                 <extensions>true</extensions>
-                <executions>
-                    <!-- This execution makes sure that the manifest is available
-                     when the tests are executed -->
-                    <execution>
-                        <id>generate-manifest</id>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                        <configuration>
-                            <exportScr>true</exportScr>
-                        </configuration>
-                    </execution>
-                </executions>
-                
                 <configuration>
                     <instructions>
                         <Import-Package>
                             !lombok,
+                            javax.annotation;version="[1.0,2)",
                             *
                         </Import-Package>
 <!--                             javax.xml.bind;version="[2.3,3)", -->
-
                     </instructions>
                 </configuration>
             </plugin>
-            
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>jaxb2-maven-plugin</artifactId>
@@ -160,22 +204,7 @@
                     </dependency>
                 </dependencies>
             </plugin>
-            
-            <!--
-             <plugin>
-             <groupId>org.ops4j.pax.exam</groupId>
-             <artifactId>exam-maven-plugin</artifactId>
-             <version>4.11.0</version>
-             <executions>
-             <execution>
-             <goals>
-             <goal>start-container</goal>
-             <goal>stop-container</goal>
-             </goals>
-             </execution>
-             </executions>
-             </plugin>
-             -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -202,38 +231,53 @@
                     </execution>
                 </executions>
             </plugin>
-            
-            <!--
-             <plugin>
-             <artifactId>maven-surefire-plugin</artifactId>
-             <configuration>
-             <systemPropertyVariables>
-             <pax.exam.karaf.version>${dependency.karaf.version}</pax.exam.karaf.version>
-             </systemPropertyVariables>
-             </configuration>
-             </plugin>
-             -->
-            
-            <!--
-             <plugin>
-             <groupId>org.apache.maven.plugins</groupId>
-             <artifactId>maven-failsafe-plugin</artifactId>
-             <version>2.12</version>
-             <executions>
-             <execution>
-             <goals>
-             <goal>integration-test</goal>
-             </goals>
-             </execution>
-             </executions>
-             <configuration>
-             <forkMode>always</forkMode>
-             <parallel>none</parallel>
-             <threadCount>1</threadCount>
-             </configuration>
-             </plugin>
-             -->
-            
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/main/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.2.7</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
     
@@ -244,47 +288,58 @@
             <version>1.7.1</version>
             <scope>provided</scope>
         </dependency>
-        
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.core</artifactId>
             <version>6.0.0</version>
             <scope>provided</scope>
         </dependency>
-        
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>osgi.cmpn</artifactId>
             <version>6.0.0</version>
             <scope>provided</scope>
         </dependency>
-        
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.component.annotations</artifactId>
             <version>1.3.0</version>
         </dependency>
-        
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.metatype.annotations</artifactId>
             <version>1.3.0</version>
         </dependency>
-        
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>27.0-jre</version>
+            <version>27.1-jre</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>3.0.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>3.0.0</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
             <version>2.3.28</version>
         </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.4</version>
+            <version>1.18.22</version>
             <scope>provided</scope>
         </dependency>
 
@@ -295,19 +350,24 @@
         </dependency>
 
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.6.2</version>
             <scope>test</scope>
         </dependency>
-        <!--
-         <dependency>
-         <groupId>org.ops4j.pax.exam</groupId>
-         <artifactId>pax-exam-junit4</artifactId>
-         <version>4.8.0</version>
-         <scope>test</scope>
-         </dependency>
-         -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.6.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>5.6.2</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.framework</artifactId>
@@ -384,76 +444,69 @@
         </dependency>
         
     </dependencies>
-    
+
     <profiles>
         <profile>
-            <id>generate-github-release-body</id>
+            <id>modules</id>
             <activation>
                 <property>
-                    <name>github_release</name>
-                    <value>true</value>
+                    <name>skipModules</name>
+                    <value>!true</value>
                 </property>
             </activation>
+        </profile>
+
+        <profile>
+            <id>sign-artifacts</id>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>3.2.0</version>
+                        <groupId>org.simplify4u.plugins</groupId>
+                        <artifactId>sign-maven-plugin</artifactId>
+                        <version>0.3.1</version>
                         <executions>
                             <execution>
-                                <id>template-github-release-body</id>
-                                <phase>process-resources</phase>
                                 <goals>
-                                    <goal>copy-resources</goal>
+                                    <goal>sign</goal>
                                 </goals>
-                                <configuration>
-                                    <outputDirectory>${basedir}/.release</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}</directory>
-                                            <filtering>true</filtering>
-                                            <includes>
-                                                <include>.releasetemplate</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
                 </plugins>
             </build>
         </profile>
-        
+
         <profile>
             <id>release-dummy</id>
             <distributionManagement>
                 <snapshotRepository>
                     <id>dummy-distribution</id>
-                    <url>file:///tmp/maven-snapshot/</url>
+                    <url>file:///tmp/${project.groupId}-${project.artifactId}-${project.version}/maven-snapshot/</url>
                 </snapshotRepository>
                 <repository>
                     <id>dummy-distribution</id>
-                    <url>file:///tmp/maven-release/</url>
+                    <url>file:///tmp/${project.groupId}-${project.artifactId}-${project.version}/maven-release/</url>
                 </repository>
             </distributionManagement>
         </profile>
+
 
         <profile>
             <id>release-judong</id>
             <distributionManagement>
                 <snapshotRepository>
                     <id>judong-nexus-distribution</id>
-                    <url>${env.JUDONG_MAVEN_UPSTREAM_SNAPSHOT}</url>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <url>https://nexus.judo.technology/repository/maven-judong-snapshots/</url>
                 </snapshotRepository>
                 <repository>
                     <id>judong-nexus-distribution</id>
-                    <url>${env.JUDONG_MAVEN_UPSTREAM_RELEASE}</url>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <url>https://nexus.judo.technology/repository/maven-judong-snapshots/</url>
                 </repository>
             </distributionManagement>
         </profile>
-        
+
         <profile>
             <id>release-central</id>
             <build>
@@ -483,6 +536,7 @@
                     </plugin>
                 </plugins>
             </build>
+
             <distributionManagement>
                 <snapshotRepository>
                     <id>ossrh</id>
