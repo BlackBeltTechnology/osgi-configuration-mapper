@@ -30,6 +30,19 @@
         <karaf-version>4.3.4</karaf-version>
         <revision>1.0.1-SNAPSHOT</revision>
 
+        <!--suppress UnresolvedMavenProperty -->
+        <logback-test-config>${maven.multiModuleProjectDirectory}/logback-test.xml</logback-test-config>
+
+        <surefire-version>3.0.0-M7</surefire-version>
+
+        <!-- Code Quality-->
+        <sonar-maven-plugin-version>3.9.1.2184</sonar-maven-plugin-version>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.language>java</sonar.language>
+        <sonar.java.source>${java.version}</sonar.java.source>
+        <jacoco.version>0.8.8</jacoco.version>
+
     </properties>
 
     <url>http://github.com/${project-repositoryId}</url>
