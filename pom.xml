@@ -217,7 +217,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>jaxb2-maven-plugin</artifactId>
-                <version>2.3.1</version>
+                <version>3.1.0</version>
                 <extensions>true</extensions>
                 <executions>
                     <execution>
@@ -233,7 +233,6 @@
                             <xjbSources>
                                 <xjbSoure>src/main/bindings/SkipElementProperties.xjc</xjbSoure>
                             </xjbSources>
-                            <generateEpisode>false</generateEpisode>
                         </configuration>
                     </execution>
                 </executions>
