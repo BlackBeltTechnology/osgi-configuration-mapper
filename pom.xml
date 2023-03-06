@@ -151,6 +151,27 @@
                     <artifactId>sonar-maven-plugin</artifactId>
                     <version>${sonar-maven-plugin-version}</version>
                 </plugin>
+
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire-version}</version>
+                    <configuration>
+                        <trimStackTrace>false</trimStackTrace>
+                        <systemPropertyVariables>
+                            <logback.configurationFile>${logback-test-config}</logback.configurationFile>
+                        </systemPropertyVariables>
+                        <!--suppress UnresolvedMavenProperty -->
+                        <argLine>
+                            ${jacoco.agent}
+                            -Dfile.encoding=UTF-8
+                            --add-opens java.base/java.lang=ALL-UNNAMED
+                            --add-opens java.base/java.util=ALL-UNNAMED
+                            --add-opens java.base/java.time=ALL-UNNAMED
+                        </argLine>
+                        <trimStackTrace>false</trimStackTrace>
+                    </configuration>
+                </plugin>
+
             </plugins>
 
         </pluginManagement>
@@ -230,17 +251,6 @@
                 </dependencies>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
-                <configuration>
-                    <environmentVariables>
-                        <PREFIX_ENV>testFromEnv</PREFIX_ENV>
-                        <ANOTHER_ENV>testFromAnotherEnv</ANOTHER_ENV>
-                    </environmentVariables>
-                </configuration>
-            </plugin>
 
             <!-- Needed if you use versionAsInProject() -->
             <plugin>
