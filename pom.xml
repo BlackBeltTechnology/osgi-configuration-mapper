@@ -20,8 +20,8 @@
 
         <deployOnly>false</deployOnly>
         <maven>3.8.3</maven>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <pax.exam.framework>felix</pax.exam.framework>
         <pax.exam.logging>none</pax.exam.logging>
         <felix.osgi.version>5.6.12</felix.osgi.version>
@@ -127,11 +127,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.7.0</version>
-                    <configuration>
-                        <source>11</source>
-                        <target>11</target>
-                    </configuration>
+                    <version>3.10.1</version>
                 </plugin>
 
                 <plugin>
