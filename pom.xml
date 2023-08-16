@@ -19,7 +19,7 @@
         <src.dir>src/main</src.dir>
 
         <deployOnly>false</deployOnly>
-        <maven>3.8.3</maven>
+        <maven>3.9.4</maven>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <pax.exam.framework>felix</pax.exam.framework>
