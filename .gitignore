@@ -58,3 +58,7 @@ wercker.env
 .release
 **/.flattened-pom.xml
 **/.DS_Store
+.claude
+.gemini
+.opencode
+.agent
