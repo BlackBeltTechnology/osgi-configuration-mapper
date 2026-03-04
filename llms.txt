@@ -41,6 +41,10 @@ Key facts:
 - [src/main/resources/configuration_mapper_v1.xsd](src/main/resources/configuration_mapper_v1.xsd): XML schema for extension files defining factory PIDs and conditions
 - [src/main/bindings/SkipElementProperties.xjc](src/main/bindings/SkipElementProperties.xjc): JAXB binding customizations for XSD code generation
 
+## Used by
+
+- [judo-platform](../judo-platform): runtime/judo-platform
+
 ## Optional
 
 - [pom.xml](pom.xml): Maven build configuration with dependencies, profiles, and plugin management
