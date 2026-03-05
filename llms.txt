@@ -43,7 +43,7 @@ Key facts:
 
 ## Used by
 
-- [judo-platform](../judo-platform): runtime/judo-platform
+- [judo-platform](../judo-platform): Model-driven OSGi runtime platform with REST APIs and Karaf deployment
 
 ## Optional
 
