@@ -1,0 +1,52 @@
+# OSGi Configuration Mapper
+
+> A runtime OSGi bundle that centralizes configuration management by distributing values from a single configset file to multiple OSGi components through Freemarker templates.
+
+Key facts:
+- Java 21, packaged as an OSGi bundle
+- Maven 3.9.4 build with Maven Wrapper (`./mvnw`), single-module project
+- OSGi Declarative Services, ConfigurationAdmin, Freemarker 2.3.28, JAXB, Guava, Lombok
+- Monitors bundles for `.template` files and pushes rendered configurations via ConfigurationAdmin
+- Supports OSGi properties, environment variables, and JVM system properties with configurable precedence
+- Integration tests use PAX Exam with Apache Felix 5.6.12
+- License: Apache 2.0
+
+## Docs
+
+- [README.md](README.md): Project overview, architecture diagrams, and usage guide
+- [AGENTS.md](AGENTS.md): Developer guide with build commands, directory structure, and coding conventions
+- [CONTRIBUTING.md](CONTRIBUTING.md): Contribution guidelines and build instructions
+- [.github/CIFLOW.md](.github/CIFLOW.md): CI/CD workflow and branching strategy
+
+## Source — OSGi Component Layer
+
+- [src/main/java/hu/blackbelt/configuration/mapper/DefaultTemplatedConfigSet.java](src/main/java/hu/blackbelt/configuration/mapper/DefaultTemplatedConfigSet.java): DS component entry point, activates on configset-*.cfg, wires ConfigurationAdmin and creates handler/tracker
+- [src/main/java/hu/blackbelt/configuration/mapper/DefaultTemplatedConfigSetConfig.java](src/main/java/hu/blackbelt/configuration/mapper/DefaultTemplatedConfigSetConfig.java): OSGi MetaType config interface defining templatePath, envPrefix, and variableScopePrecedence
+
+## Source — Core Logic
+
+- [src/main/java/hu/blackbelt/configuration/mapper/OsgiTemplatedConfigurationSetHandler.java](src/main/java/hu/blackbelt/configuration/mapper/OsgiTemplatedConfigurationSetHandler.java): Processes templates, manages OSGi configurations via ConfigurationAdmin, tracks changes with SHA1 checksums
+- [src/main/java/hu/blackbelt/configuration/mapper/TemplateProcessor.java](src/main/java/hu/blackbelt/configuration/mapper/TemplateProcessor.java): Freemarker template engine with variable scope merging, conditional evaluation, and PID resolution
+- [src/main/java/hu/blackbelt/configuration/mapper/TemplateResourceBundleTracker.java](src/main/java/hu/blackbelt/configuration/mapper/TemplateResourceBundleTracker.java): Monitors active bundles for template resources and triggers config processing on bundle changes
+- [src/main/java/hu/blackbelt/configuration/mapper/ExtensibleBundleTracker.java](src/main/java/hu/blackbelt/configuration/mapper/ExtensibleBundleTracker.java): Generic async bundle tracker with single-threaded executor to prevent platform thread leaks
+
+## Source — Data Model and Utilities
+
+- [src/main/java/hu/blackbelt/configuration/mapper/ConfigurationEntry.java](src/main/java/hu/blackbelt/configuration/mapper/ConfigurationEntry.java): Builder POJO representing a template with optional XML spec and instance name
+- [src/main/java/hu/blackbelt/configuration/mapper/ConfigState.java](src/main/java/hu/blackbelt/configuration/mapper/ConfigState.java): Enum for configuration states (UNCHANGED, NEW, FOREIGN, CHECKSUMCHANGE)
+- [src/main/java/hu/blackbelt/configuration/mapper/Utils.java](src/main/java/hu/blackbelt/configuration/mapper/Utils.java): SHA1 hashing, Dictionary-to-Map conversion, properties loading, PID parsing
+
+## Source — Schema and Bindings
+
+- [src/main/resources/configuration_mapper_v1.xsd](src/main/resources/configuration_mapper_v1.xsd): XML schema for extension files defining factory PIDs and conditions
+- [src/main/bindings/SkipElementProperties.xjc](src/main/bindings/SkipElementProperties.xjc): JAXB binding customizations for XSD code generation
+
+## Used by
+
+- [judo-platform](../judo-platform): Model-driven OSGi runtime platform with REST APIs and Karaf deployment
+
+## Optional
+
+- [pom.xml](pom.xml): Maven build configuration with dependencies, profiles, and plugin management
+- [.github/workflows/build.yml](.github/workflows/build.yml): Main CI/CD pipeline
+- [LICENSE.txt](LICENSE.txt): Apache License 2.0
